@@ -58,7 +58,7 @@ allprojects { p ->
 }
 INIT
 
-  # 打开 R8 压缩 + 资源压缩（全 ABI 102MB → ~60MB；单 ABI 39MB → 33MB）
+  # 打开代码压缩 + 资源压缩（全 ABI 102MB → ~60MB；单 ABI 39MB → 33MB）
   sed -i '' 's/^android.enableMinifyInReleaseBuilds=.*/android.enableMinifyInReleaseBuilds=true/' gradle.properties || true
   # 版本号跟随 app.json（prebuild 不会自动更新已存在的 android/）
   APP_VER=$(cd "$ROOT" && "$PY_BIN" -c "import json;print(json.load(open('app.json'))['expo']['version'])")
@@ -69,7 +69,7 @@ INIT
     && sed -i '' 's/^android.enableShrinkResourcesInReleaseBuilds=.*/android.enableShrinkResourcesInReleaseBuilds=true/' gradle.properties \
     || printf '\nandroid.enableShrinkResourcesInReleaseBuilds=true\n' >> gradle.properties
 
-  # expo modules 用反射按名字加载类，R8 保守一点全 keep（体积影响很小）。
+  # expo modules 用反射按名字加载类，压缩时保守一点全 keep（体积影响很小）。
   # 注意：曾经启动就 NoClassDefFoundError(LazyKType) 的真正原因是
   # expo-linear-gradient / expo-haptics 装成了 15.0.8（旧命名），
   # 而 SDK 58 要求 ~58.0.3 / ~58.0.7 —— keep 规则救不了版本错配。
@@ -79,7 +79,7 @@ marker = 'expo.modules.kotlin.types'
 s = open(p).read()
 if marker not in s:
     s += '''
-# expo modules 通过反射按名字加载，R8 必须保留
+# expo modules 通过反射按名字加载，压缩时必须保留
 -dontwarn expo.modules.**
 -keep class expo.modules.** { *; }
 -keepclassmembers class expo.modules.** { *; }
@@ -139,7 +139,7 @@ PY
 patch_android
 
 # 版本自检：expo 系包必须和 SDK 58 的 bundledNativeModules 对齐，
-# 否则 R8 包能编出来但一启动就 NoClassDefFoundError。
+# 否则压缩包能编出来但一启动就 NoClassDefFoundError。
 ( cd "$ROOT" && node -e '
 const fs=require("fs");
 const b=require("./node_modules/expo/bundledNativeModules.json");
@@ -151,7 +151,7 @@ for(const [k,v] of Object.entries(b)){
   }catch(e){}
 }
 if(bad.length){ console.log("⚠️  expo 包版本和 SDK 58 不一致："); bad.forEach(x=>console.log("   - "+x));
-  console.log("   先跑：npx expo install --fix（或手动装成上面的版本），否则 R8 包会启动崩溃。"); }
+  console.log("   先跑：npx expo install --fix（或手动装成上面的版本），否则压缩包会启动崩溃。"); }
 ' )
 
 echo "→ 开始构建（首次会下载 Gradle 依赖，约 2GB；之后增量很快）"

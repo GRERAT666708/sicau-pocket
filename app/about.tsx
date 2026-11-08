@@ -45,7 +45,7 @@ export default function AboutScreen() {
           <Text style={{ fontSize: 20, fontWeight: '700', color: t.text, marginTop: 14 }}>川农口袋</Text>
           <Text style={{ fontSize: 12, color: t.textTertiary, marginTop: 4 }}>{`四川农业大学校园助手 · v${APP_VERSION}`}</Text>
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-            <Badge text="iOS / Android / Web" />
+            <Badge text="Android · Web" />
             <Badge text="MIT" />
           </View>
         </View>
@@ -53,7 +53,10 @@ export default function AboutScreen() {
         <Card>
           <Text style={{ fontSize: 13, color: t.textSecondary, lineHeight: 21 }}>
             一个为川农同学做的轻量校园 App：查课表、算空闲、记专注、看电费和饭卡。
-            参考了开源项目 ZZUPocket 的产品思路，用 Expo + React Native 重写为跨平台版本。
+            参考了开源项目 ZZUPocket 的产品思路，用 Expo + React Native 重写。
+            {'\n\n'}
+            目前只提供 Android 版本（另有 Web 版可在浏览器打开），iOS 暂不支持 ——
+            需要 Apple 开发者账号与真机签名，这部分还没做。
           </Text>
         </Card>
 

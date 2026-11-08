@@ -1,6 +1,9 @@
 # 川农口袋 · 四川农业大学校园助手
 
-一个为四川农业大学（SICAU）同学做的轻量校园 App，用一套 TypeScript 代码同时跑在 **iOS / Android / Web** 上。
+一个为四川农业大学（SICAU）同学做的轻量校园 App，用一套 TypeScript 代码写出来，目前**只提供 Android 版本**（另有 Web 版可在浏览器预览）。
+
+> ⚠️ **暂不支持 iOS**：仓库里没有任何 iOS 构建产物，也没有 App Store 版本。代码本身是跨平台的（Expo + React Native），
+> 但 iOS 端还需要 Apple 开发者账号（$99/年）+ 真机签名才能装，这部分**没有做**。iPhone 同学请先用 Web 版，或等后续适配。
 
 产品思路参考了郑州大学的开源项目 [ZZUPocket](https://github.com/3beuml/ZZUPocket)（Kotlin + Jetpack Compose），本项目用 Expo + React Native 重写，并换成川农的作息、学期与信息架构。
 
@@ -179,10 +182,9 @@ v0.7.0 起整套 UI 换成「半透明玻璃卡片 + 渐变背景」的风格：
 `../sicau-pocket-0.7.2.apk`（102MB，`io.github.grerat666708.sicaupocket`，versionCode 1）——
 已在 Android 模拟器里装上并跑通，装到手机上就是独立 App，不需要 Expo Go。
 
-体积偏大是因为**三个 ABI 都打进去了、且关了 R8 压缩**。要小一点可以：
+体积偏大是因为**三个 ABI 都打进去了**。要小一点可以：
 
 - 只留 arm64：`gradle :app:assembleRelease -PreactNativeArchitectures=arm64-v8a`
-- 或者修好 R8（expo-modules 58 的 `LazyKType` 缺失问题）后再开 `android.enableMinifyInReleaseBuilds=true`
 
 ## 本地构建（不用 Expo 账号）
 
@@ -200,27 +202,8 @@ v0.7.0 起整套 UI 换成「半透明玻璃卡片 + 渐变背景」的风格：
 | `dl.google.com` 只有几 KB/s | Gradle 仓库换成阿里云镜像（google / central / gradle-plugin） |
 | 没有 build-tools 37（AGP 9 默认要） | `init.d/bt36.gradle` 把 `buildToolsVersion` 钉到 36.0.0 |
 | AGP 要写 `~/.android` 但被沙箱拒 | `HOME` / `ANDROID_USER_HOME` 指向工作区内可写目录 |
-| R8 报 `Missing class expo.modules.kotlin.types.LazyKType` | 关掉 `android.enableMinifyInReleaseBuilds`（先出包，后续再修） |
 | Gradle 9.4.1 需要 JDK 17 | `JAVA_HOME=tools/jdk17/Contents/Home` |
 
-
-### R8 压缩（v0.7.3 起默认开）
-
-`android/gradle.properties` 里 `android.enableMinifyInReleaseBuilds=true` + `enableShrinkResourcesInReleaseBuilds=true`，
-`app/proguard-rules.pro` 里 keep 住 `expo.modules.**`。体积对比（arm64 单 ABI）：
-
-| 配置 | 体积 |
-| --- | --- |
-| 全 ABI + 不压缩 | 102MB |
-| 全 ABI + R8 | 96MB |
-| arm64 + 不压缩 | 39MB |
-| **arm64 + R8** | **33MB** |
-
-踩过的坑：R8 包能编出来，但一启动就 `NoClassDefFoundError: expo.modules.kotlin.types.LazyKType`。
-根因不是 keep 规则，而是 **expo 系包的版本没跟 SDK 58 对齐** —— `expo-linear-gradient`、`expo-haptics`
-装成了 `15.0.8`（旧命名），SDK 58 要求 `~58.0.3` / `~58.0.7`。用 `npx expo install --fix`
-（或按 `node_modules/expo/bundledNativeModules.json` 手动对齐）之后 R8 就正常了。
-`scripts/build-apk-local.sh` 里已经加了版本自检，不一致会直接提示。
 
 ## 打包成能直接装的 APK（EAS 云构建）
 
@@ -258,7 +241,7 @@ npx eas-cli@latest build -p android --profile preview
 - **版本号自动递增**：`eas.json` 里 `preview` / `production` 都开了 `autoIncrement: true`，`appVersionSource: remote` 由 EAS 托管 —— 每构建一次 `versionCode`（Android）和 `buildNumber`（iOS）自动 +1，不用手动改；`version`（对用户显示的 0.7.x）还是手动改 `app.json`。
 - **免费额度**：Expo 免费账号每月有几次 Android 构建，排队时间视情况 5–30 分钟。
 - **本地构建（可选）**：`npx eas-cli@latest build -p android --profile preview --local` 需要本机有 Android SDK + JDK 17；没有的话就用云构建。
-- **iOS**：`npx eas-cli@latest build -p ios --profile preview` 需要 Apple 开发者账号（$99/年）才能装到真机，或者只做模拟器包。
+- **iOS**：暂不支持。要出 iOS 包需要 Apple 开发者账号（$99/年），当前项目没有做这部分适配与签名。
 
 ### 自己的 GitHub 主页链接在哪
 
@@ -342,7 +325,7 @@ $SDK/platform-tools/adb exec-out screencap -p > shot.png
 npm i -g eas-cli          # 需要本机有 Node.js（LTS 即可）
 eas login                 # 免费注册 expo.dev 账号
 eas build -p android --profile preview     # 云端构建，产出可直接安装的 APK
-eas build -p ios --profile preview         # 产出 iOS 内测包（需 Apple 开发者账号 $99/年）
+# iOS：暂不支持（需要 Apple 开发者账号 $99/年，当前未适配）
 eas build -p android --profile production  # AAB，用于 Google Play 上架
 eas build -p ios --profile production      # IPA，用于 App Store 上架
 ```
@@ -445,7 +428,8 @@ Android 的 `applicationId` 和 iOS 的 `bundleIdentifier` 采用「反写域名
 - [x] WebView 内打开教务网登录并一键导入课表（川农e认证在 WebView 里正常）
 - [x] 记住 WebView 会话与上次的课表页，免重复登录
 - [x] 教务课表导入（账号 / 链接 / 源码三种方式，解析正方 ASP 网格课表）
-- [ ] 桌面小组件（Android AppWidget / iOS WidgetKit）
+- [ ] 桌面小组件（Android AppWidget）
+- [ ] iOS 适配与签名（当前暂不支持）
 - [ ] 上课提醒与静音（本地通知）
 - [x] 成绩查询（导入式）
 - [x] 校历（按开学日期推算）
