@@ -18,7 +18,7 @@ export type Theme = {
   accentSoft: string;
   danger: string;
   shadow: string;
-  /** 液态玻璃：背景渐变（自下而上由浅到深） */
+  /** 背景渐变（自下而上由浅到深） */
   bgGradient: [string, string, string];
   /** 玻璃材质底色（叠在模糊层上，半透明） */
   glassTint: string;

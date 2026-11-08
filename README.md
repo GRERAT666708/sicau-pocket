@@ -160,15 +160,15 @@ docs/sicau-api.md       川农各系统接入说明
 ```
 
 
-## 界面：液态玻璃（Liquid Glass）
+## 界面：玻璃卡片与渐变背景
 
-v0.7.0 起整套 UI 换成 iOS 26 风格的液态玻璃：
+v0.7.0 起整套 UI 换成「半透明玻璃卡片 + 渐变背景」的风格：
 
 - **玻璃材质**：`components/Glass.tsx` 的 `GlassSurface` —— 模糊层（`expo-blur`）+ 半透明染色 + 顶部镜面高光 + 1px 亮边 + 柔和投影，四层叠出来。卡片、快捷入口、设置列表、悬浮 tab bar 都是这一套。
 - **渐变背景**：`components/AppBackground.tsx`，浅色 `#F8FCF9 → #EFF6F0 → #E4EFE7`，深色 `#101815 → #0C1310 → #070B09`；页面滚动时玻璃卡片会透出底下的渐变。
-- **校徽水印**：同一个组件里在右上角铺一枚极淡的川农校徽（浅色 6%、深色 5% 不透明度），素材从教务处校历图上裁出来做了透明处理，存在 `assets/images/emblem-green.png` / `emblem-white.png`。
+- **校徽水印**：同一个组件里水平垂直居中铺一枚极淡的川农校徽（浅色 9%、深色 7% 不透明度），素材从教务处校历图上裁出来做了透明处理，存在 `assets/images/emblem-green.png` / `emblem-white.png`。
 - **主按钮**：绿到深绿的渐变胶囊 + 上半部白色高光，按压有轻微缩放。
-- **tab bar**：`borderRadius: 30` 的悬浮玻璃胶囊，选中项是一枚带亮边的浅色药丸。
+- **tab bar**：`borderRadius: 30` 的悬浮胶囊，选中项是一枚带亮边的浅色药丸。
 
 > 安卓上 `expo-blur` 是近似模糊（真实高斯模糊只有 iOS 有），所以安卓的玻璃会略实一点，保证文字可读。
 

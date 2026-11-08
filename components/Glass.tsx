@@ -7,7 +7,7 @@ import { radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 
 /**
- * 液态玻璃材质（Apple Liquid Glass 风格）。
+ * 半透明玻璃材质：模糊层 + 染色 + 镜面高光 + 亮边。
  *
  * 三层叠出来：模糊层（BlurView）→ 半透明染色层 → 顶部镜面高光 + 1px 亮边。
  * 安卓上 BlurView 是近似的（真实模糊只有 iOS 有），所以染色更实一点保证可读性。
