@@ -23,6 +23,30 @@
 | 外观 | 浅色 / 深色 / 跟随系统，全套自绘主题 |
 
 
+
+## 桌面小组件（Android）
+
+长按桌面空白处 → **小组件** → 找到「川农口袋」→ 把「川农课表」拖到桌面。4×2 大小，显示：
+
+- 左上：第几周 · 周几
+- 今天前 3 节课的 **时间 + 课程名 + 教室**
+- 今天没课时显示「今天没课，好好休息」，正在上课时显示「正在上：xxx」
+- 右上角「刷新」按钮可手动重读；点卡片任意处打开 App
+
+实现方式（`plugins/withScheduleWidget.js`）：
+
+| 部分 | 做法 |
+| --- | --- |
+| 小组件本体 | 原生 `AppWidgetProvider`（Kotlin），用 `RemoteViews` 渲染，纯原生、不依赖 RN 运行时 |
+| 数据桥 | App 每次课表/设置变化时，`lib/widgetSync.ts` 把「今天要显示的课」写成 `filesDir/widget.json`；小组件读这个文件 |
+| 为什么不直接读 AsyncStorage | 小组件跑在系统进程里，拿不到 RN 的存储；写文件是最稳的桥 |
+| 刷新时机 | 系统 30 分钟一次（`updatePeriodMillis`）+ 点「刷新」+ 打开 App |
+
+之所以做成 config plugin 而不是直接改 `android/`：`android/` 是 `expo prebuild` 生成物、被 `.gitignore` 忽略，
+插件会在每次 prebuild 时把 Kotlin 源码、布局、`appwidget-provider` 配置和 `AndroidManifest` 的 `<receiver>` 重新注入。
+
+![桌面小组件](docs/screenshots/widget-preview.png)
+
 ## 校园卡 / 电费（真实数据，v0.8.0）
 
 学校给学生的入口是微信里的 H5：`https://yktwechat.sicau.edu.cn/home/openHomePage?openid=…`。

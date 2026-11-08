@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { hydrate, useAppState } from '@/lib/store';
 import { hydrateClassrooms } from '@/lib/classroom';
 import { hydrateGrades } from '@/lib/grades';
+import { startWidgetSync } from '@/lib/widgetSync';
 import { useTheme } from '@/hooks/useTheme';
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -24,6 +25,12 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (ready && hydrated) void SplashScreen.hideAsync().catch(() => {});
+  }, [ready, hydrated]);
+
+  // 课表变化时把「今天」写进 widget.json，供桌面小组件读取
+  useEffect(() => {
+    if (!ready || !hydrated) return;
+    return startWidgetSync();
   }, [ready, hydrated]);
 
   if (!ready || !hydrated) {

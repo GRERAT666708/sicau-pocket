@@ -62,7 +62,9 @@ INIT
   sed -i '' 's/^android.enableMinifyInReleaseBuilds=.*/android.enableMinifyInReleaseBuilds=true/' gradle.properties || true
   # 版本号跟随 app.json（prebuild 不会自动更新已存在的 android/）
   APP_VER=$(cd "$ROOT" && "$PY_BIN" -c "import json;print(json.load(open('app.json'))['expo']['version'])")
-  sed -i '' "s/versionCode [0-9]*/versionCode 8/" app/build.gradle
+  APP_CODE=$(cd "$ROOT" && "$PY_BIN" -c "import json;print(json.load(open('app.json'))['expo'].get('android',{}).get('versionCode',1))")
+  echo "  版本：$APP_VER (versionCode $APP_CODE)"
+  sed -i '' "s/versionCode [0-9]*/versionCode $APP_CODE/" app/build.gradle
   sed -i '' "s/versionName \"[^\"]*\"/versionName \"$APP_VER\"/" app/build.gradle
 
   grep -q '^android.enableShrinkResourcesInReleaseBuilds' gradle.properties \
