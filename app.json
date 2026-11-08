@@ -2,7 +2,7 @@
   "expo": {
     "name": "川农口袋",
     "slug": "sicau-pocket",
-    "version": "0.10.0",
+    "version": "0.10.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sicau-pocket",
@@ -25,7 +25,7 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "versionCode": 10
+      "versionCode": 12
     },
     "web": {
       "bundler": "metro",

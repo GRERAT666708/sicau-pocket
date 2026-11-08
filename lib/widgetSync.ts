@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { dayIndex, fmtHM, nowMinutes, weekdayCN } from '@/lib/date';
+import { coursePalette } from '@/constants/theme';
 import { statusNow } from '@/lib/schedule';
 import { currentWeek, getState, subscribe, todayCourses } from '@/lib/store';
 
@@ -12,12 +13,26 @@ import { currentWeek, getState, subscribe, todayCourses } from '@/lib/store';
  * 小组件读这个文件渲染（见 plugins/withScheduleWidget.js）。
  */
 
-export type WidgetCourse = { time: string; name: string; room: string };
+export type WidgetCourse = { time: string; name: string; room: string; color: string };
+
+export type WidgetHighlight = {
+  time: string;
+  name: string;
+  room: string;
+  color: string;
+  state: 'class' | 'next';
+};
 
 export type WidgetPayload = {
   week: number;
   day: string;
+  /** 「周日 11月8日」这种日期标签，小组件顶部用 */
+  dateLabel: string;
   courses: WidgetCourse[];
+  /** 除前三节外还剩几节，显示「其他 N 个日程」 */
+  more: number;
+  /** 小尺寸小组件用：正在上 / 下一节课 */
+  highlight?: WidgetHighlight;
   emptyText?: string;
   updatedAt: string;
 };
@@ -35,10 +50,14 @@ export function buildWidgetPayload(): WidgetPayload {
   const day = weekdayCN(now);
   const entries = todayCourses(state.courses, dayIndex(now), week);
 
+  const colorOf = (course: { colorIndex: number }) =>
+    coursePalette[Math.abs(course.colorIndex) % coursePalette.length].fg;
+
   const courses: WidgetCourse[] = entries.slice(0, 3).map((e) => ({
     time: `${fmtHM(e.slot.start)}-${fmtHM(e.slot.end)}`,
     name: e.course.name,
     room: e.slot.room ?? e.course.room ?? '',
+    color: colorOf(e.course),
   }));
 
   const status = statusNow(entries, nowMinutes());
@@ -49,10 +68,32 @@ export function buildWidgetPayload(): WidgetPayload {
     emptyText = `下一节 ${fmtHM(status.next.slot.start)} 开始`;
   }
 
+  const highlight: WidgetHighlight | undefined =
+    status.kind === 'class'
+      ? {
+          time: `${fmtHM(status.entry.slot.start)}-${fmtHM(status.entry.slot.end)}`,
+          name: status.entry.course.name,
+          room: status.entry.slot.room ?? status.entry.course.room ?? '',
+          color: colorOf(status.entry.course),
+          state: 'class',
+        }
+      : status.kind === 'break'
+        ? {
+            time: `${fmtHM(status.next.slot.start)}-${fmtHM(status.next.slot.end)}`,
+            name: status.next.course.name,
+            room: status.next.slot.room ?? status.next.course.room ?? '',
+            color: colorOf(status.next.course),
+            state: 'next',
+          }
+        : undefined;
+
   return {
     week,
     day,
+    dateLabel: `${day} ${now.getMonth() + 1}月${now.getDate()}日`,
     courses,
+    more: Math.max(0, entries.length - 3),
+    highlight,
     emptyText,
     updatedAt: `${pad2(now.getHours())}:${pad2(now.getMinutes())}`,
   };

@@ -26,26 +26,32 @@
 
 ## 桌面小组件（Android）
 
-长按桌面空白处 → **小组件** → 找到「川农口袋」→ 把「川农课表」拖到桌面。4×2 大小，显示：
+长按桌面空白处 → **小组件** → 找到「川农口袋」，里面有 **两种尺寸**：
 
-- 左上：第几周 · 周几
-- 今天前 3 节课的 **时间 + 课程名 + 教室**
-- 今天没课时显示「今天没课，好好休息」，正在上课时显示「正在上：xxx」
-- 右上角「刷新」按钮可手动重读；点卡片任意处打开 App
+| 尺寸 | 名称 | 显示内容 |
+| --- | --- | --- |
+| 4×2 | 川农课表 | 顶部日期药丸 + 今天前 3 节（彩色竖条 + 彩色课程名 + 时间/教室），底部「其他 N 个日程」 |
+| 2×2 | 川农课表（小） | 顶部日期药丸 + 只显示 **正在上 / 下一节** 这一门：彩色竖条、课程名、时间与教室 |
+
+共同细节：卡片是浅色雾面 + 22dp 圆角；右下角/右上角有一枚约占卡面 1/3 的淡校徽水印（alpha 0.10，故意做出「压在卡片下面」的层次感）；每门课按课程配色取一条竖条与课程名颜色；今天没课时显示「今天没课，好好休息」；正在上课时状态行写「正在上」；「刷新」可手动重读；点卡片任意处打开 App；系统每 30 分钟自动刷新。
 
 实现方式（`plugins/withScheduleWidget.js`）：
 
 | 部分 | 做法 |
 | --- | --- |
-| 小组件本体 | 原生 `AppWidgetProvider`（Kotlin），用 `RemoteViews` 渲染，纯原生、不依赖 RN 运行时 |
-| 数据桥 | App 每次课表/设置变化时，`lib/widgetSync.ts` 把「今天要显示的课」写成 `filesDir/widget.json`；小组件读这个文件 |
+| 小组件本体 | 两个原生 `AppWidgetProvider`（Kotlin + `RemoteViews`），纯原生、不依赖 RN 运行时 |
+| 数据桥 | App 每次课表/设置变化时，`lib/widgetSync.ts` 把「今天要显示的课」写成 `filesDir/widget.json`；两个小组件都读这个文件 |
+| 小尺寸取哪一门 | payload 里额外带一个 `highlight`（正在上的课，或下一节），小尺寸只渲染它 |
 | 为什么不直接读 AsyncStorage | 小组件跑在系统进程里，拿不到 RN 的存储；写文件是最稳的桥 |
 | 刷新时机 | 系统 30 分钟一次（`updatePeriodMillis`）+ 点「刷新」+ 打开 App |
 
-之所以做成 config plugin 而不是直接改 `android/`：`android/` 是 `expo prebuild` 生成物、被 `.gitignore` 忽略，
-插件会在每次 prebuild 时把 Kotlin 源码、布局、`appwidget-provider` 配置和 `AndroidManifest` 的 `<receiver>` 重新注入。
+踩过的坑：`RemoteViews` 只允许白名单里的控件，布局里用 `<View>` 当色条或占位符会直接 `InflateException: Class not allowed to be inflated android.view.View`，
+系统小组件选择器里表现为「Can't load widget」。所有色条/占位都要用 `<TextView>`（或 `ImageView`）代替。
 
-![桌面小组件](docs/screenshots/widget-preview.png)
+之所以做成 config plugin 而不是直接改 `android/`：`android/` 是 `expo prebuild` 生成物、被 `.gitignore` 忽略，
+插件会在每次 prebuild 时把 Kotlin 源码、两个布局、`appwidget-provider` 配置和 `AndroidManifest` 里的两个 `<receiver>` 重新注入。
+
+![桌面小组件](docs/screenshots/widgets.png)
 
 ## 校园卡 / 电费（真实数据，v0.8.0）
 
