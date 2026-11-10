@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Badge, Card, Chip, GhostButton, PrimaryButton, SectionTitle } from '@/components/UIKit';
 import { radius, spacing } from '@/constants/theme';
-import { CAMPUS_BUILDINGS, demoEcard, demoElectricity, demoSeats } from '@/lib/campus';
+import { CAMPUS_BUILDINGS, demoEcard, demoElectricity } from '@/lib/campus';
 import {
   busyAt,
   buildingsOf,
@@ -31,7 +31,6 @@ const TITLES: Record<string, { title: string; sub: string }> = {
   electricity: { title: '宿舍电费', sub: '余额与用量' },
   ecard: { title: '校园一卡通', sub: '余额与流水' },
   classroom: { title: '空闲教室', sub: '按教学楼查询' },
-  library: { title: '图书馆座位', sub: '实时空位' },
 };
 
 export default function CampusScreen() {
@@ -87,7 +86,6 @@ export default function CampusScreen() {
         {kind === 'electricity' ? <Electricity /> : null}
         {kind === 'ecard' ? <Ecard /> : null}
         {kind === 'classroom' ? <Classroom /> : null}
-        {kind === 'library' ? <Library /> : null}
         <DataNote />
       </ScrollView>
     </View>
@@ -434,57 +432,6 @@ function Classroom() {
   );
 }
 
-function Library() {
-  const t = useTheme();
-  const { settings } = useAppState();
-  const areas = useMemo(() => demoSeats(effectiveCampus(settings)), [effectiveCampus(settings)]);
-  const totalFree = areas.reduce((s, a) => s + a.free, 0);
-  return (
-    <>
-      <Card>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-          <Text style={{ fontSize: 30, fontWeight: '700', color: t.primary }}>{totalFree}</Text>
-          <Text style={{ fontSize: 12, color: t.textSecondary }}>个座位空闲</Text>
-        </View>
-        <Text style={{ fontSize: 11.5, color: t.textTertiary, marginTop: 4 }}>更新时间 {fmtTime(Date.now())}</Text>
-      </Card>
-
-      <View style={{ marginTop: spacing.lg, gap: 10 }}>
-        {areas.map((a) => {
-          const ratio = a.free / a.total;
-          return (
-            <Card key={a.area} style={{ padding: 16 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 9 }}>
-                <Text style={{ fontSize: 13.5, fontWeight: '600', color: t.text }}>{a.area}</Text>
-                <Text style={{ fontSize: 12.5, color: t.primary, fontWeight: '700' }}>{a.free}</Text>
-              </View>
-              <View style={{ height: 6, borderRadius: 3, backgroundColor: t.surfaceAlt, overflow: 'hidden' }}>
-                <View
-                  style={{
-                    height: 6,
-                    width: `${Math.round(ratio * 100)}%`,
-                    backgroundColor: ratio > 0.4 ? t.primary : ratio > 0.15 ? t.accent : t.danger,
-                    borderRadius: 3,
-                  }}
-                />
-              </View>
-              <Text style={{ fontSize: 10.5, color: t.textTertiary, marginTop: 6 }}>
-                空位比例 {Math.round(ratio * 100)}% · 共 {a.total} 座
-              </Text>
-            </Card>
-          );
-        })}
-      </View>
-
-      <View style={{ marginTop: spacing.lg }}>
-        <PrimaryButton label="去图书馆预约" icon="open-outline" onPress={() => {}} />
-      </View>
-    </>
-  );
-}
-
-
-/** 电费 / 一卡通都归「完美校园」管，这里先放说明和跳转 */
 function PerfectCampusNotice({ what }: { what: string }) {
   const t = useTheme();
   const router = useRouter();

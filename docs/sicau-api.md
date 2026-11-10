@@ -14,7 +14,6 @@
 | 电费 | 14 天随机用量、余额 | `lib/campus.ts` `demoElectricity()` |
 | 一卡通 | 余额、6 笔流水 | `lib/campus.ts` `demoEcard()` |
 | 空教室 | 4 栋楼 16 间房，按节次随机占用 | `lib/campus.ts` `demoClassrooms()` |
-| 图书馆座位 | 4 个区域空位数 | `lib/campus.ts` `demoSeats()` |
 | 登录页 | 演示绑定学号姓名（不校验密码） | `app/login.tsx` |
 
 ## 2. 学校系统入口（2026-11 实测）

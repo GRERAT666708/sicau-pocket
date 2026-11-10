@@ -59,7 +59,7 @@ export type User = {
   campusSource?: 'major' | 'timetable' | 'manual';
 };
 
-export type CampusKind = 'electricity' | 'ecard' | 'classroom' | 'library';
+export type CampusKind = 'electricity' | 'ecard' | 'classroom';
 
 export type ElectricitySnapshot = {
   dorm: string;
@@ -84,8 +84,4 @@ export type ClassroomRow = {
   busy: number[];
 };
 
-export type SeatArea = {
-  area: string;
-  free: number;
-  total: number;
-};
+

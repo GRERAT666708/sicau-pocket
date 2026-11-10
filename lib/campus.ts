@@ -1,5 +1,5 @@
 import { addDays, isoDate } from './date';
-import type { Campus, ClassroomRow, EcardSnapshot, ElectricitySnapshot, SeatArea } from './types';
+import type { Campus, ClassroomRow, EcardSnapshot, ElectricitySnapshot } from './types';
 
 /** 稳定伪随机，保证同一天的数据不跳变 */
 function rng(seed: string) {
@@ -96,15 +96,3 @@ export function demoClassrooms(
   return rows.map((r) => ({ ...r, busy: r.busy.filter((p) => p >= start && p <= end) }));
 }
 
-export function demoSeats(campus: Campus = '雅安'): SeatArea[] {
-  const areas = [
-    { area: `${campus}校区 图书馆 2F 自习区`, total: 320 },
-    { area: `${campus}校区 图书馆 3F 阅览室`, total: 180 },
-    { area: `${campus}校区 图书馆 4F 考研专区`, total: 240 },
-    { area: `${campus}校区 教学楼自习室`, total: 120 },
-  ];
-  return areas.map((a) => {
-    const rand = rng(a.area + new Date().getHours());
-    return { ...a, free: Math.floor(a.total * (0.15 + rand() * 0.5)) };
-  });
-}

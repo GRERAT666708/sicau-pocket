@@ -185,9 +185,10 @@ class ScheduleWidgetSmallProvider : AppWidgetProvider() {
     val file = File(context.filesDir, "widget.json")
     if (!file.exists()) {
       views.setTextViewText(R.id.widget_small_date, "川农口袋")
-      views.setTextViewText(R.id.widget_small_state, "还没同步")
-      views.setTextViewText(R.id.widget_small_name, "打开 App 同步课表")
-      views.setTextViewText(R.id.widget_small_detail, "")
+      views.setTextViewText(R.id.widget_small_more, "")
+      views.setTextViewText(R.id.widget_small_state, "打开 App 同步一次课表")
+      setRowsVisible(views, 0)
+      views.setViewVisibility(R.id.widget_small_state, android.view.View.VISIBLE)
       return views
     }
 
@@ -195,32 +196,72 @@ class ScheduleWidgetSmallProvider : AppWidgetProvider() {
       val json = JSONObject(file.readText())
       views.setTextViewText(R.id.widget_small_date, json.optString("dateLabel", json.optString("day", "")))
 
-      val h = json.optJSONObject("highlight")
-      if (h == null) {
-        views.setTextViewText(R.id.widget_small_state, "今天")
-        views.setTextViewText(R.id.widget_small_name, json.optString("emptyText", "今天没课"))
-        views.setTextViewText(R.id.widget_small_detail, "")
-        views.setTextColor(R.id.widget_small_name, safeColor("#3E4A42"))
-        views.setInt(R.id.widget_small_bar, "setBackgroundColor", safeColor("#C9D8CD"))
+      val courses = json.optJSONArray("courses")
+      val count = if (courses == null) 0 else courses.length()
+      val shown = Math.min(count, 3)
+
+      if (shown == 0) {
+        setRowsVisible(views, 0)
+        views.setTextViewText(R.id.widget_small_more, "")
+        views.setViewVisibility(R.id.widget_small_more, android.view.View.GONE)
+        views.setTextViewText(R.id.widget_small_state, json.optString("emptyText", "今天没课，好好休息"))
+        views.setViewVisibility(R.id.widget_small_state, android.view.View.VISIBLE)
       } else {
-        views.setTextViewText(
-          R.id.widget_small_state,
-          if (h.optString("state") == "class") "正在上" else "下一节"
-        )
-        views.setTextViewText(R.id.widget_small_name, h.optString("name", ""))
-        views.setTextViewText(
-          R.id.widget_small_detail,
-          h.optString("time", "") + "  " + h.optString("room", "")
-        )
-        val color = safeColor(h.optString("color", "#0E7A43"))
-        views.setTextColor(R.id.widget_small_name, color)
-        views.setInt(R.id.widget_small_bar, "setBackgroundColor", color)
+        views.setViewVisibility(R.id.widget_small_state, android.view.View.GONE)
+        for (i in 0 until shown) {
+          val c = courses!!.getJSONObject(i)
+          val color = safeColor(c.optString("color", "#0E7A43"))
+          val time = c.optString("time", "").substringBefore("-").trim()
+          when (i) {
+            0 -> {
+              views.setTextViewText(R.id.widget_small_time1, time)
+              views.setTextViewText(R.id.widget_small_name1, c.optString("name", ""))
+              views.setTextColor(R.id.widget_small_name1, color)
+              views.setInt(R.id.widget_small_bar1, "setBackgroundColor", color)
+            }
+            1 -> {
+              views.setTextViewText(R.id.widget_small_time2, time)
+              views.setTextViewText(R.id.widget_small_name2, c.optString("name", ""))
+              views.setTextColor(R.id.widget_small_name2, color)
+              views.setInt(R.id.widget_small_bar2, "setBackgroundColor", color)
+            }
+            else -> {
+              views.setTextViewText(R.id.widget_small_time3, time)
+              views.setTextViewText(R.id.widget_small_name3, c.optString("name", ""))
+              views.setTextColor(R.id.widget_small_name3, color)
+              views.setInt(R.id.widget_small_bar3, "setBackgroundColor", color)
+            }
+          }
+        }
+        setRowsVisible(views, shown)
+        if (count > shown) {
+          views.setTextViewText(R.id.widget_small_more, "其他 " + (count - shown) + " 个")
+          views.setViewVisibility(R.id.widget_small_more, android.view.View.VISIBLE)
+        } else {
+          views.setTextViewText(R.id.widget_small_more, "")
+          views.setViewVisibility(R.id.widget_small_more, android.view.View.GONE)
+        }
       }
       views
     } catch (e: Exception) {
-      views.setTextViewText(R.id.widget_small_state, "读取失败")
-      views.setTextViewText(R.id.widget_small_name, "打开 App 再同步一次")
+      setRowsVisible(views, 0)
+      views.setTextViewText(R.id.widget_small_state, "读取失败，打开 App 再同步一次")
+      views.setViewVisibility(R.id.widget_small_state, android.view.View.VISIBLE)
       views
+    }
+  }
+
+  /** 只显示前 n 行（每行 = 小色条 + 时间 + 课程名） */
+  private fun setRowsVisible(views: RemoteViews, n: Int) {
+    val ids = intArrayOf(
+      R.id.widget_small_bar1, R.id.widget_small_time1, R.id.widget_small_name1,
+      R.id.widget_small_bar2, R.id.widget_small_time2, R.id.widget_small_name2,
+      R.id.widget_small_bar3, R.id.widget_small_time3, R.id.widget_small_name3,
+    )
+    for (i in ids.indices) {
+      val row = i / 3
+      val visible = row < n
+      views.setViewVisibility(ids[i], if (visible) android.view.View.VISIBLE else android.view.View.GONE)
     }
   }
 
@@ -466,100 +507,176 @@ const LAYOUT_SMALL = `<?xml version="1.0" encoding="utf-8"?>
     android:contentDescription="校徽" />
 
   <LinearLayout
-  android:layout_width="match_parent"
-  android:layout_height="match_parent"
-  android:orientation="vertical"
-  android:paddingLeft="12dp"
-  android:paddingRight="12dp"
-  android:paddingTop="10dp"
-  android:paddingBottom="10dp">
-
-  <LinearLayout
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:gravity="center_vertical"
-    android:orientation="horizontal">
-
-    <TextView
-      android:id="@+id/widget_small_date"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:background="@drawable/widget_pill"
-      android:paddingLeft="8dp"
-      android:paddingRight="8dp"
-      android:paddingTop="2dp"
-      android:paddingBottom="2dp"
-      android:text="周日 11月8日"
-      android:textColor="#0E7A43"
-      android:textSize="11sp"
-      android:textStyle="bold" />
-
-    <TextView
-      android:layout_width="0dp"
-      android:layout_height="1dp"
-      android:layout_weight="1" />
-
-    <TextView
-      android:id="@+id/widget_small_refresh"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:paddingLeft="6dp"
-      android:text="刷新"
-      android:textColor="#9AA79E"
-      android:textSize="10sp" />
-  </LinearLayout>
-
-  <TextView
-    android:id="@+id/widget_small_state"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="8dp"
-    android:text="下一节"
-    android:textColor="#8A998F"
-    android:textSize="10sp" />
-
-  <LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="3dp"
-    android:orientation="horizontal">
-
-    <TextView
-      android:id="@+id/widget_small_bar"
-      android:layout_width="3dp"
-      android:layout_height="34dp"
-      android:background="#0E7A43" />
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingLeft="12dp"
+    android:paddingRight="12dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp">
 
     <LinearLayout
-      android:layout_width="0dp"
+      android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:layout_marginLeft="8dp"
-      android:layout_weight="1"
-      android:orientation="vertical">
+      android:gravity="center_vertical"
+      android:orientation="horizontal">
 
       <TextView
-        android:id="@+id/widget_small_name"
-        android:layout_width="match_parent"
+        android:id="@+id/widget_small_date"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:maxLines="2"
-        android:text="高等数学"
+        android:background="@drawable/widget_pill"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:text="周日 11月8日"
         android:textColor="#0E7A43"
-        android:textSize="15sp"
+        android:textSize="11sp"
         android:textStyle="bold" />
 
       <TextView
-        android:id="@+id/widget_small_detail"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_weight="1" />
+
+      <TextView
+        android:id="@+id/widget_small_refresh"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:paddingLeft="6dp"
+        android:text="刷新"
+        android:textColor="#9AA79E"
+        android:textSize="10sp" />
+    </LinearLayout>
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="7dp"
+      android:orientation="horizontal">
+
+      <TextView
+        android:id="@+id/widget_small_bar1"
+        android:layout_width="3dp"
+        android:layout_height="16dp"
+        android:background="#0E7A43" />
+
+      <TextView
+        android:id="@+id/widget_small_time1"
+        android:layout_width="40dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="7dp"
+        android:text="08:10"
+        android:textColor="#8A998F"
+        android:textSize="10sp" />
+
+      <TextView
+        android:id="@+id/widget_small_name1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="4dp"
+        android:layout_weight="1"
         android:ellipsize="end"
         android:maxLines="1"
-        android:layout_marginTop="1dp"
-        android:text="08:10-09:50  4-A306"
-        android:textColor="#7C8B80"
-        android:textSize="11sp" />
+        android:text="高等数学"
+        android:textColor="#0E7A43"
+        android:textSize="12sp"
+        android:textStyle="bold" />
     </LinearLayout>
-  </LinearLayout>
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="5dp"
+      android:orientation="horizontal">
+
+      <TextView
+        android:id="@+id/widget_small_bar2"
+        android:layout_width="3dp"
+        android:layout_height="16dp"
+        android:background="#7E6BD9" />
+
+      <TextView
+        android:id="@+id/widget_small_time2"
+        android:layout_width="40dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="7dp"
+        android:text="10:10"
+        android:textColor="#8A998F"
+        android:textSize="10sp" />
+
+      <TextView
+        android:id="@+id/widget_small_name2"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="4dp"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="动物生物化学"
+        android:textColor="#7E6BD9"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="5dp"
+      android:orientation="horizontal">
+
+      <TextView
+        android:id="@+id/widget_small_bar3"
+        android:layout_width="3dp"
+        android:layout_height="16dp"
+        android:background="#C97B2E" />
+
+      <TextView
+        android:id="@+id/widget_small_time3"
+        android:layout_width="40dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="7dp"
+        android:text="14:20"
+        android:textColor="#8A998F"
+        android:textSize="10sp" />
+
+      <TextView
+        android:id="@+id/widget_small_name3"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="4dp"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="细胞生物学"
+        android:textColor="#C97B2E"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+    </LinearLayout>
+
+    <TextView
+      android:id="@+id/widget_small_more"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="5dp"
+      android:ellipsize="end"
+      android:maxLines="1"
+      android:text=""
+      android:textColor="#9AA79E"
+      android:textSize="9sp" />
+
+    <TextView
+      android:id="@+id/widget_small_state"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="6dp"
+      android:ellipsize="end"
+      android:maxLines="2"
+      android:text=""
+      android:textColor="#8A998F"
+      android:textSize="11sp"
+      android:visibility="gone" />
   </LinearLayout>
 </FrameLayout>
 `;
@@ -610,7 +727,7 @@ const PILL = `<?xml version="1.0" encoding="utf-8"?>
 const STRINGS = `<?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="widget_description">今日课表：第几周、前 3 节的时间 / 课程 / 教室</string>
-  <string name="widget_description_small">下一节课：时间、课程、教室</string>
+  <string name="widget_description_small">今天的课表：最多 3 门课的时间与课程名</string>
 </resources>
 `;
 

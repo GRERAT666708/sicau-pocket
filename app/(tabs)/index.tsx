@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppBackground } from '@/components/AppBackground';
@@ -15,12 +15,12 @@ import { effectiveCampus } from '@/lib/campusState';
 import { statusNow } from '@/lib/schedule';
 import { focusSummary, todaySessions } from '@/lib/stats';
 import { useTheme } from '@/hooks/useTheme';
+import { loadEcard, type EcardBinding } from '@/lib/ecard';
 
 const QUICK = [
-  { key: 'focus', label: '开始专注', icon: 'timer-outline' as const, color: '#0E7A43' },
-  { key: 'classroom', label: '空教室', icon: 'school-outline' as const, color: '#3E3A99' },
-  { key: 'electricity', label: '电费', icon: 'flash-outline' as const, color: '#C97B2E' },
-  { key: 'ecard', label: '一卡通', icon: 'card-outline' as const, color: '#9A2F47' },
+  { key: 'focus', label: '开始专注', icon: 'timer-outline' as const, color: '#0E7A43', iconSize: 19 },
+  { key: 'classroom', label: '空教室', icon: 'school-outline' as const, color: '#3E3A99', iconSize: 21 },
+  { key: 'electricity', label: '电费', icon: 'flash-outline' as const, color: '#C97B2E', iconSize: 17 },
 ];
 
 export default function TodayScreen() {
@@ -29,6 +29,15 @@ export default function TodayScreen() {
   const insets = useSafeAreaInsets();
   const { settings, courses, sessions, user } = useAppState();
   const [now, setNow] = useState(() => new Date());
+  const [ecard, setEcard] = useState<EcardBinding | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadEcard()
+        .then((b) => setEcard(b))
+        .catch(() => {});
+    }, []),
+  );
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30_000);
@@ -215,11 +224,53 @@ export default function TodayScreen() {
                   backgroundColor: `${q.color}18`,
                 }}
               >
-                <Ionicons name={q.icon} size={18} color={q.color} />
+                <Ionicons name={q.icon} size={q.iconSize ?? 18} color={q.color} />
               </View>
               <Text style={{ fontSize: 11.5, color: t.text, fontWeight: '500' }}>{q.label}</Text>
             </GlassPressable>
           ))}
+        </View>
+
+
+        {/* 宿舍电费：数据来自「校园卡」页里的电费充值，房间记忆后自动带出 */}
+        <View style={{ marginTop: spacing.lg }}>
+          <GlassPressable
+            onPress={() => router.push((ecard ? '/ecard?elepay=1' : '/ecard') as never)}
+            radiusValue={radius.md}
+            intensity={18}
+            contentStyle={{ paddingVertical: 14, paddingHorizontal: 14, width: '100%' }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
+              <View
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#C97B2E18',
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name="flash-outline" size={17} color="#C97B2E" />
+              </View>
+              <Text style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: '700', color: t.text }} numberOfLines={1}>
+                宿舍电费
+              </Text>
+            </View>
+            <Text style={{ marginTop: 4, marginLeft: 46 }} numberOfLines={1} ellipsizeMode="tail">
+              <Text style={{ fontSize: 13, fontWeight: '700', color: t.text }}>
+                {ecard?.room?.roomid && ecard?.elecBalance ? `¥${ecard.elecBalance}  ` : ''}
+              </Text>
+              <Text style={{ fontSize: 10.5, color: t.textTertiary }}>
+                {ecard?.room?.label
+                  ? `${ecard.room.label}${ecard?.room?.roomid && ecard?.elecBalance ? ' · 电费余额' : ''}`
+                  : ecard
+                    ? '进「电费充值」选一次房间，之后自动记住'
+                    : '还没绑定校园卡，点进来绑定一次'}
+              </Text>
+            </Text>
+          </GlassPressable>
         </View>
 
         <View style={{ marginTop: spacing.xl }}>

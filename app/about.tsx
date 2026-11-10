@@ -12,7 +12,7 @@ const FEATURES: { icon: keyof typeof Ionicons.glyphMap; title: string; desc: str
   { icon: 'sunny-outline', title: '今天', desc: '一眼看清现在上什么课、还有多久下课' },
   { icon: 'calendar-outline', title: '课表', desc: '10 节次网格（按教务处作息）、单双周、多时段课程' },
   { icon: 'timer-outline', title: '专注', desc: '番茄钟 + 热力图，记录每天的专注时长' },
-  { icon: 'flash-outline', title: '校园服务', desc: '电费/一卡通（真实数据）、图书馆座位、空闲教室（教务真实课表）' },
+  { icon: 'flash-outline', title: '校园服务', desc: '电费与一卡通（真实余额 / 流水 / 充值）、空闲教室（教务真实课表）' },
 ];
 
 export default function AboutScreen() {

@@ -9,7 +9,7 @@ import { courseColors, radius, spacing } from '@/constants/theme';
 import { dayIndex, formatMD, isoDate, weekDates, WEEKDAY_LABELS } from '@/lib/date';
 import { PERIODS, PERIOD_GROUPS } from '@/lib/periods';
 import { currentWeek, useAppState } from '@/lib/store';
-import { slotSpan } from '@/lib/schedule';
+import { mergeEntries, slotSpan } from '@/lib/schedule';
 import { useTheme } from '@/hooks/useTheme';
 
 const TIME_COL = 40;
@@ -49,10 +49,13 @@ export default function ScheduleScreen() {
   }, []);
 
   const blocks = useMemo(() => {
-    return courses.flatMap((course) =>
-      course.slots
-        .filter((s) => s.weeks.includes(week))
-        .map((slot) => ({ course, slot })),
+    // 4 学时的课在教务系统里常被排成 1-2 / 3-4 两个格子，这里合成一块「1-4 节」
+    return mergeEntries(
+      courses.flatMap((course) =>
+        course.slots
+          .filter((s) => s.weeks.includes(week))
+          .map((slot) => ({ course, slot })),
+      ),
     );
   }, [courses, week]);
 

@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -18,6 +18,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { actions } from '@/lib/store';
 import {
   clearEcard,
+  clearEcardRoom,
   ecardUrl,
   elepayUrl,
   loadEcard,
@@ -63,6 +64,16 @@ const CAPTURE_ROOM_JS = `
     }
     window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'room', room: vals, label: labels.join(' · ') }));
   } catch (err) {}
+})();
+true;
+`;
+
+/** 选好房间后，页面会显示「电费余额」，抓一次整页文字回来解析 */
+const CAPTURE_ELEC_JS = `
+(function () {
+  try {
+    window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'elecText', text: document.body.innerText }));
+  } catch (e) {}
 })();
 true;
 `;
@@ -119,13 +130,33 @@ export default function EcardScreen() {
   const [info, setInfo] = useState<{ name?: string; studentId?: string; balance?: string }>({});
   const [reloadKey, setReloadKey] = useState(0);
   const [roomLabel, setRoomLabel] = useState<string | null>(null);
-  const [showElepay, setShowElepay] = useState(false);
+  const params = useLocalSearchParams<{ elepay?: string; openid?: string; autopick?: string }>();
+  const [showElepay, setShowElepay] = useState(params.elepay === '1');
+  const [roomDirty, setRoomDirty] = useState(false);
+  // 直接深链进电费页时，先落在首页拿到会话 cookie，再跳到电费页，否则会被拦
+  const pendingElepayRef = useRef(params.elepay === '1');
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const ignoreRoomUntilRef = useRef(0);
+  const bindingRef = useRef<EcardBinding | null>(null);
 
   useEffect(() => {
     mountedRef.current = true;
+    // 支持深链直接带 openid（方便一次性把链接甩进来就绑好）
+    const fromLink = params.openid ? parseOpenid(String(params.openid)) : null;
+    if (fromLink) {
+      saveEcard({ openid: fromLink })
+        .then((b) => {
+          if (!mountedRef.current) return;
+          setBinding(b);
+          bindingRef.current = b;
+          setReloadKey((k) => k + 1);
+        })
+        .catch(() => {});
+    }
     loadEcard().then((b) => {
       if (!mountedRef.current) return;
       setBinding(b);
+      bindingRef.current = b;
       if (b) {
         setInfo({ name: b.name, studentId: b.studentId, balance: b.balance });
         setRoomLabel(b.room?.label ?? null);
@@ -134,8 +165,9 @@ export default function EcardScreen() {
     });
     return () => {
       mountedRef.current = false;
+      if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, []);
+  }, [params.openid]);
 
   const bind = useCallback(async () => {
     const openid = parseOpenid(input);
@@ -158,11 +190,13 @@ export default function EcardScreen() {
       } catch {
         return;
       }
-      if (payload.type === 'room' && payload.room && binding) {
+      const b0 = bindingRef.current;
+      if (payload.type === 'room' && payload.room && b0 && Date.now() > ignoreRoomUntilRef.current) {
         const label = String(payload.label ?? '');
         setRoomLabel(label || null);
+        setRoomDirty(false);
         saveEcard({
-          openid: binding.openid,
+          openid: b0.openid,
           room: {
             factorycode: payload.room.factorycode,
             buildid: payload.room.buildid,
@@ -174,6 +208,26 @@ export default function EcardScreen() {
         })
           .then((next) => setBinding(next))
           .catch(() => {});
+        return;
+      }
+      if (
+        payload.type === 'elecText' &&
+        payload.text &&
+        b0 &&
+        b0.room?.roomid && // 没选全房间时页面上没有真正的电费余额，别抓
+        Date.now() > ignoreRoomUntilRef.current
+      ) {
+        const text = String(payload.text);
+        // 优先取带小数的金额；页面上「电费余额」后面偶尔先出现 1 之类的脏字，没有小数就不认
+        const m =
+          text.match(/电费余额[\s\S]{0,40}?([0-9]+\.[0-9]{1,2})/) ??
+          text.match(/电费余额\s*[:：]?\s*([0-9]{2,}\.[0-9]{1,2})/);
+        if (m) {
+          const elecBalance = m[1];
+          saveEcard({ openid: b0.openid, elecBalance, elecUpdatedAt: Date.now() })
+            .then((next) => setBinding(next))
+            .catch(() => {});
+        }
         return;
       }
       if (payload.type === 'text' && payload.text) {
@@ -190,8 +244,26 @@ export default function EcardScreen() {
         }
       }
     },
-    [binding],
+    [],
   );
+
+  const changeRoom = useCallback(async () => {
+    const b = bindingRef.current;
+    if (!b) return;
+    // 先停抓取、先挂上忽略窗口，避免旧页面把旧房间又写回去
+    if (pollRef.current) clearInterval(pollRef.current);
+    ignoreRoomUntilRef.current = Date.now() + 10000;
+    setRoomLabel(null);
+    const next = await clearEcardRoom(b.openid);
+    if (next) {
+      bindingRef.current = next;
+      setBinding(next);
+    }
+    // 回到一卡通首页（保住会话），用户再点「充宿舍电费」进去选新房
+    setShowElepay(false);
+    setRoomDirty(true);
+    setReloadKey((k) => k + 1);
+  }, []);
 
   const unbind = useCallback(async () => {
     await clearEcard();
@@ -310,7 +382,17 @@ export default function EcardScreen() {
             <Text style={{ fontSize: 11.5, color: binding.room?.roomid ? t.text : t.textTertiary, flexShrink: 1 }}>
               {roomLabel || '进「电费充值」里选一次，之后自动记住'}
             </Text>
+
           </View>
+          {roomDirty ? (
+            <Text style={{ fontSize: 10.5, color: t.primary, marginTop: 6 }}>
+              房间已清除。点下面「充宿舍电费」重新选一次，选完主页余额会自动换成新房间的。
+            </Text>
+          ) : binding.room?.roomid ? (
+            <Text style={{ fontSize: 10.5, color: t.textTertiary, marginTop: 6 }}>
+              选错了或换宿舍：点「重新选宿舍」清掉再选一次。
+            </Text>
+          ) : null}
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
             <GhostButton
               label="刷新"
@@ -323,6 +405,14 @@ export default function EcardScreen() {
             />
             <GhostButton label="解除绑定" icon="unlink-outline" onPress={unbind} style={{ flex: 1 }} />
           </View>
+          {binding.room?.roomid ? (
+            <GhostButton
+              label="重新选宿舍"
+              icon="swap-horizontal-outline"
+              onPress={changeRoom}
+              style={{ marginTop: 10 }}
+            />
+          ) : null}
           <PrimaryButton
             label={showElepay ? '返回一卡通首页' : '充宿舍电费'}
             icon={showElepay ? 'card-outline' : 'flash-outline'}
@@ -339,21 +429,47 @@ export default function EcardScreen() {
         <Browser
           key={reloadKey}
           ref={webRef}
-          source={{ uri: showElepay ? elepayUrl(binding.openid) : ecardUrl(binding.openid) }}
+          source={{
+            uri:
+              showElepay && !pendingElepayRef.current
+                ? elepayUrl(binding.openid)
+                : ecardUrl(binding.openid),
+          }}
           style={{ flex: 1, backgroundColor: t.bg }}
           onLoadEnd={(event: any) => {
             const url: string = event?.nativeEvent?.url ?? '';
             try {
               webRef.current?.injectJavaScript?.(PROBE_JS);
+              if (pendingElepayRef.current && binding) {
+                pendingElepayRef.current = false;
+                setShowElepay(true);
+                const target = JSON.stringify(elepayUrl(binding.openid));
+                setTimeout(() => {
+                  try {
+                    webRef.current?.injectJavaScript?.(`window.location.href = ${target}; true;`);
+                  } catch {}
+                }, 600);
+                return;
+              }
               if (url.indexOf('elepay') >= 0) {
                 if (binding.room?.roomid) {
                   webRef.current?.injectJavaScript?.(autofillRoomJs(binding.room));
                 }
-                setTimeout(() => {
+                // 选房间是异步加载的：每隔 3 秒把「房间 + 电费余额」各抓一次，30 秒后停
+                clearInterval(pollRef.current as any);
+                let tries = 0;
+                pollRef.current = setInterval(() => {
+                  tries += 1;
                   try {
                     webRef.current?.injectJavaScript?.(CAPTURE_ROOM_JS);
+                    webRef.current?.injectJavaScript?.(CAPTURE_ELEC_JS);
                   } catch {}
-                }, 2500);
+                  if (tries >= 100) clearInterval(pollRef.current as any);
+                  const bb = bindingRef.current;
+                  if (bb?.room?.roomid && bb?.elecBalance) {
+                    clearInterval(pollRef.current as any);
+                  }
+                }, 3000) as any;
               }
             } catch {}
           }}

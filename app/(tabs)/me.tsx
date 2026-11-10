@@ -26,13 +26,13 @@ const SERVICES: {
   soon?: boolean;
   /** 入口下方的小字状态，比如「暂不可用」 */
   hint?: string;
+  /** Ionicons 字形视觉大小不一，按字形微调，让几个入口的图标看起来一样大 */
+  iconSize?: number;
 }[] = [
-  { key: 'electricity', label: '宿舍电费', icon: 'flash-outline', color: '#C97B2E', hint: '已接入 · 可充值' },
-  { key: 'ecard', label: '校园一卡通', icon: 'card-outline', color: '#9A2F47', hint: '已接入 · 看余额' },
-  { key: 'library', label: '图书馆座位', icon: 'library-outline', color: '#3E3A99', hint: '暂不可用' },
-  { key: 'classroom', label: '空闲教室', icon: 'school-outline', color: '#0E7A43' },
-  { key: 'grades', label: '成绩查询', icon: 'ribbon-outline', color: '#2F7A9A' },
-  { key: 'calendar', label: '校历', icon: 'calendar-outline', color: '#8A5A2B' },
+  { key: 'electricity', label: '电费 · 一卡通', icon: 'flash-outline', color: '#C97B2E', hint: '余额 / 流水 / 充值', iconSize: 17 },
+  { key: 'classroom', label: '空闲教室', icon: 'school-outline', color: '#0E7A43', iconSize: 21, hint: '教务真实课表' },
+  { key: 'grades', label: '成绩查询', icon: 'ribbon-outline', color: '#2F7A9A', iconSize: 19, hint: '从教务系统导入' },
+  { key: 'calendar', label: '校历', icon: 'calendar-outline', color: '#8A5A2B', iconSize: 19, hint: '开学周次与作息' },
 ];
 
 export default function MeScreen() {
@@ -127,7 +127,7 @@ export default function MeScreen() {
               key={s.key}
               disabled={s.soon}
               onPress={() => router.push(ROUTES[s.key] ?? (`/campus/${s.key}` as Href))}
-              style={{ width: '31.5%', flexGrow: 1, opacity: s.soon ? 0.55 : 1 }}
+              style={{ width: '48%', opacity: s.soon ? 0.55 : 1 }}
               radiusValue={radius.md}
               intensity={18}
               contentStyle={{ paddingVertical: 15, paddingHorizontal: 12, gap: 9 }}
@@ -142,7 +142,7 @@ export default function MeScreen() {
                   justifyContent: 'center',
                 }}
               >
-                <Ionicons name={s.icon} size={18} color={s.color} />
+                <Ionicons name={s.icon} size={s.iconSize ?? 18} color={s.color} />
               </View>
               <Text style={{ fontSize: 12.5, fontWeight: '600', color: t.text }}>{s.label}</Text>
               {s.hint ? (

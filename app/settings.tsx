@@ -183,7 +183,7 @@ export default function SettingsScreen() {
           ) : null}
           <Text style={{ fontSize: 10.5, color: t.textTertiary, lineHeight: 16 }}>
             {collegesOf(campus).slice(0, 6).join('、')} 等学院在{campus}校区。
-            改校区会同时切换「空闲教室」和「图书馆座位」的默认范围。
+            改校区会同时切换「空闲教室」的默认范围。
           </Text>
         </Card>
 

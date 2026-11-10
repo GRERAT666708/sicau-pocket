@@ -30,6 +30,9 @@ export type EcardBinding = {
     label?: string;
     savedAt?: number;
   };
+  /** 从「电费充值」页读到的宿舍电费余额（页面刷新时更新） */
+  elecBalance?: string;
+  elecUpdatedAt?: number;
 };
 
 export function parseOpenid(input: string): string | null {
@@ -50,6 +53,21 @@ export function ecardUrl(openid: string): string {
   return `${ECARD_HOME}?openid=${encodeURIComponent(openid)}`;
 }
 
+/** 清掉记住的宿舍（换宿舍 / 选错时用），余额一起清，避免主页显示旧房间的数 */
+export async function clearEcardRoom(openid: string): Promise<EcardBinding | null> {
+  const prev = await loadEcard();
+  if (!prev) return null;
+  const next: EcardBinding = {
+    ...prev,
+    openid,
+    room: undefined,
+    elecBalance: undefined,
+    elecUpdatedAt: undefined,
+  };
+  await AsyncStorage.setItem(ECARD_KEY, JSON.stringify(next));
+  return next;
+}
+
 export async function loadEcard(): Promise<EcardBinding | null> {
   try {
     const raw = await AsyncStorage.getItem(ECARD_KEY);
@@ -62,7 +80,11 @@ export async function loadEcard(): Promise<EcardBinding | null> {
   }
 }
 
-export async function saveEcard(patch: Partial<EcardBinding> & { openid: string }): Promise<EcardBinding> {
+/** 串行化写入：页面会同时回传「房间」和「电费余额」，并发读改写会互相覆盖字段 */
+let saveQueue: Promise<any> = Promise.resolve();
+
+export function saveEcard(patch: Partial<EcardBinding> & { openid: string }): Promise<EcardBinding> {
+  const run = async (): Promise<EcardBinding> => {
   const prev = await loadEcard();
   const next: EcardBinding = {
     openid: patch.openid,
@@ -71,9 +93,15 @@ export async function saveEcard(patch: Partial<EcardBinding> & { openid: string 
     name: patch.name ?? prev?.name,
     studentId: patch.studentId ?? prev?.studentId,
     balance: patch.balance ?? prev?.balance,
+    elecBalance: patch.elecBalance ?? prev?.elecBalance,
+    elecUpdatedAt: patch.elecUpdatedAt ?? prev?.elecUpdatedAt,
   };
   await AsyncStorage.setItem(ECARD_KEY, JSON.stringify(next));
   return next;
+  };
+  const result = saveQueue.then(run, run);
+  saveQueue = result.catch(() => {});
+  return result;
 }
 
 export async function clearEcard(): Promise<void> {
