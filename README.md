@@ -1,9 +1,9 @@
 # 川农口袋 · 四川农业大学校园助手
 
-一个为四川农业大学（SICAU）同学做的轻量校园 App，用一套 TypeScript 代码写出来，目前**只提供 Android 版本**（另有 Web 版可在浏览器预览）。
+一个为四川农业大学（SICAU）同学做的轻量校园 App，用一套 TypeScript 代码写出来，目前**只提供 Android 版本**。
 
 > ⚠️ **暂不支持 iOS**：仓库里没有任何 iOS 构建产物，也没有 App Store 版本。代码本身是跨平台的（Expo + React Native），
-> 但 iOS 端还需要 Apple 开发者账号（$99/年）+ 真机签名才能装，这部分**没有做**。iPhone 同学请先用 Web 版，或等后续适配。
+> 但 iOS 端还需要 Apple 开发者账号（$99/年）+ 真机签名才能装，这部分**没有做**。iPhone 同学请先等后续适配。
 
 产品思路参考了郑州大学的开源项目 [ZZUPocket](https://github.com/3beuml/ZZUPocket)（Kotlin + Jetpack Compose），本项目用 Expo + React Native 重写，并换成川农的作息、学期与信息架构。
 
