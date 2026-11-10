@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge, Card, ListRow, SectionTitle } from '@/components/UIKit';
 import { radius, spacing } from '@/constants/theme';
@@ -22,7 +22,7 @@ export default function SettingsScreen() {
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { settings, sessions } = useAppState();
+  const { settings, sessions, semesters } = useAppState();
   const campus = effectiveCampus(settings);
   const byMajorCampus = settings.major ? campusOfMajor(settings.major) : null;
   const [confirm, setConfirm] = useState<null | 'courses' | 'sessions' | 'all'>(null);
@@ -190,6 +190,13 @@ export default function SettingsScreen() {
         <View style={{ height: spacing.xl }} />
         <SectionTitle title="学期与周次" />
         <Card>
+          <ListRow
+            icon="albums-outline"
+            title="学期管理与备份"
+            subtitle={`已归档 ${semesters.length} 个历史学期 · 新建/切换学期时自动备份`}
+            onPress={() => router.push('/semesters')}
+          />
+          <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: t.border }} />
           <Text style={{ fontSize: 11.5, color: t.textTertiary }}>学期名称</Text>
           <TextInput
             value={settings.termName}

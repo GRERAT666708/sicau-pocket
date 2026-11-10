@@ -2,6 +2,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 
 import { dayIndex, fmtHM, nowMinutes, weekdayCN } from '@/lib/date';
 import { coursePalette } from '@/constants/theme';
+import { periodEnd, periodStart } from '@/lib/periods';
 import { statusNow } from '@/lib/schedule';
 import { currentWeek, getState, subscribe, todayCourses } from '@/lib/store';
 
@@ -54,7 +55,7 @@ export function buildWidgetPayload(): WidgetPayload {
     coursePalette[Math.abs(course.colorIndex) % coursePalette.length].fg;
 
   const courses: WidgetCourse[] = entries.slice(0, 3).map((e) => ({
-    time: `${fmtHM(e.slot.start)}-${fmtHM(e.slot.end)}`,
+    time: `${fmtHM(periodStart(e.slot.start))}-${fmtHM(periodEnd(e.slot.end))}`,
     name: e.course.name,
     room: e.slot.room ?? e.course.room ?? '',
     color: colorOf(e.course),
@@ -65,13 +66,13 @@ export function buildWidgetPayload(): WidgetPayload {
   if (status.kind === 'class') {
     emptyText = `正在上：${status.entry.course.name}`;
   } else if (status.kind === 'break') {
-    emptyText = `下一节 ${fmtHM(status.next.slot.start)} 开始`;
+    emptyText = `下一节 ${fmtHM(periodStart(status.next.slot.start))} 开始`;
   }
 
   const highlight: WidgetHighlight | undefined =
     status.kind === 'class'
       ? {
-          time: `${fmtHM(status.entry.slot.start)}-${fmtHM(status.entry.slot.end)}`,
+          time: `${fmtHM(periodStart(status.entry.slot.start))}-${fmtHM(periodEnd(status.entry.slot.end))}`,
           name: status.entry.course.name,
           room: status.entry.slot.room ?? status.entry.course.room ?? '',
           color: colorOf(status.entry.course),
@@ -79,7 +80,7 @@ export function buildWidgetPayload(): WidgetPayload {
         }
       : status.kind === 'break'
         ? {
-            time: `${fmtHM(status.next.slot.start)}-${fmtHM(status.next.slot.end)}`,
+            time: `${fmtHM(periodStart(status.next.slot.start))}-${fmtHM(periodEnd(status.next.slot.end))}`,
             name: status.next.course.name,
             room: status.next.slot.room ?? status.next.course.room ?? '',
             color: colorOf(status.next.course),

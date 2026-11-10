@@ -1,84 +1,66 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppBackground } from '@/components/AppBackground';
 import { Card, PrimaryButton } from '@/components/UIKit';
 import { courseColors, radius, spacing } from '@/constants/theme';
-import { dayIndex, formatMD, isoDate, weekDates, WEEKDAY_LABELS } from '@/lib/date';
+import { dayIndex, formatMD, isoDate, weekDates } from '@/lib/date';
+
+const COL_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 import { PERIODS, PERIOD_GROUPS } from '@/lib/periods';
 import { currentWeek, useAppState } from '@/lib/store';
 import { mergeEntries, slotSpan } from '@/lib/schedule';
 import { useTheme } from '@/hooks/useTheme';
 
-const TIME_COL = 40;
-const GROUP_COL = 15;
-const COL_W = 86;
+const TIME_COL = 32;
+const GROUP_COL = 12;
 const HEADER_H = 48;
-const ROW_H = 54;
+const ROW_H = 52;
 
 export default function ScheduleScreen() {
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width: winW } = useWindowDimensions();
+  // 先按窗口估一个，拿到网格实际宽度后再用它均分 7 列（保证刚好好铺满，不留白）
+  const [gridW, setGridW] = useState(0);
+  const colW = gridW > 0
+    ? Math.floor(gridW / 7)
+    : Math.floor((winW - spacing.lg * 2 - TIME_COL - GROUP_COL) / 7);
   const { settings, courses } = useAppState();
   const [now] = useState(() => new Date());
-  const thisWeek = currentWeek(settings, now);
+  const rawWeek = currentWeek(settings, now);
+  // 新学期还没开学时 rawWeek 会是负数，钳到第 1 周避免出现「第 -13 周」
+  const thisWeek = Math.min(Math.max(rawWeek, 1), settings.totalWeeks);
   const [week, setWeek] = useState(thisWeek);
-  const hRef = useRef<any>(null);
+  // 换了学期（termStart 变）后自动跳到新学期的当前周
+  useEffect(() => {
+    setWeek(thisWeek);
+  }, [settings.termStart, thisWeek]);
 
   const dates = useMemo(() => weekDates(settings.termStart, week), [settings.termStart, week]);
   const today = dayIndex(now);
 
-  useEffect(() => {
-    const x = Math.max(0, (today - 1) * COL_W + HEADER_H - 120);
-    const id = setTimeout(() => {
-      const node: any = hRef.current;
-      if (!node) return;
-      if (typeof node.scrollTo === 'function') {
-        node.scrollTo({ x, animated: false });
-        return;
-      }
-      // react-native-web: 直接操作底层 DOM 节点
-      const dom = typeof node.getScrollableNode === 'function' ? node.getScrollableNode() : node;
-      if (dom && typeof dom.scrollLeft === 'number') dom.scrollLeft = x;
-    }, 60);
-    return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const blocks = useMemo(() => {
-    // 4 学时的课在教务系统里常被排成 1-2 / 3-4 两个格子，这里合成一块「1-4 节」
-    return mergeEntries(
-      courses.flatMap((course) =>
-        course.slots
-          .filter((s) => s.weeks.includes(week))
-          .map((slot) => ({ course, slot })),
+  // 本周所有上课记录（按单双周筛过），同一门课相邻节次合并成一块
+  const weekEntries = useMemo(
+    () =>
+      courses.flatMap((c) =>
+        c.slots.filter((s) => s.weeks.includes(week)).map((s) => ({ course: c, slot: s })),
       ),
-    );
-  }, [courses, week]);
-
-  const total = blocks.length;
-
-  /** 这周不上、但课表里有的课（单双周 / 周次限定），画成灰色占位块，避免误以为漏排 */
-  const offWeek = useMemo(() => {
-    const activeByDay = new Map<number, { start: number; end: number }[]>();
-    blocks.forEach(({ slot }) => {
-      const list = activeByDay.get(slot.day) ?? [];
-      list.push({ start: slot.start, end: slot.end });
-      activeByDay.set(slot.day, list);
-    });
-    return courses.flatMap((course) =>
-      course.slots
-        .filter((slot) => !slot.weeks.includes(week))
-        .filter((slot) => {
-          const list = activeByDay.get(slot.day) ?? [];
-          return !list.some((a) => slot.start <= a.end && a.start <= slot.end);
-        })
-        .map((slot) => ({ course, slot })),
-    );
-  }, [courses, week, blocks]);
+    [courses, week],
+  );
+  const blocks = useMemo(() => mergeEntries(weekEntries), [weekEntries]);
+  // 这周不上、但课表里有的课：画成灰色虚线占位，避免误以为漏排
+  const offWeek = useMemo(
+    () =>
+      courses.flatMap((c) =>
+        c.slots.filter((s) => !s.weeks.includes(week)).map((s) => ({ course: c, slot: s })),
+      ),
+    [courses, week],
+  );
+  const total = weekEntries.reduce((n, e) => n + (e.slot.end - e.slot.start + 1), 0);
 
   return (
     <AppBackground>
@@ -102,6 +84,34 @@ export default function ScheduleScreen() {
             <Ionicons name="options-outline" size={18} color={t.textSecondary} />
           </Pressable>
         </View>
+
+        {settings.demoSeeded ? (
+          <Pressable
+            onPress={() => router.push('/import')}
+            style={{
+              marginTop: spacing.md,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 10,
+              paddingVertical: 11,
+              paddingHorizontal: 12,
+              borderRadius: radius.md,
+              backgroundColor: t.primarySoft,
+              borderWidth: StyleSheet.hairlineWidth,
+              borderColor: t.border,
+            }}
+          >
+            <Ionicons name="sparkles-outline" size={16} color={t.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 12.5, fontWeight: '700', color: t.text }}>当前是演示课表</Text>
+              <Text style={{ fontSize: 10.5, color: t.textSecondary, marginTop: 2 }}>
+                这几门课是示例，导入你自己的课表后会自动替换
+              </Text>
+            </View>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: t.primary }}>去导入</Text>
+            <Ionicons name="chevron-forward" size={14} color={t.primary} />
+          </Pressable>
+        ) : null}
 
         <View
           style={{
@@ -140,7 +150,7 @@ export default function ScheduleScreen() {
               <Text style={{ fontSize: 12, color: t.primary, fontWeight: '600' }}>回到本周</Text>
             </Pressable>
           ) : (
-            <Text style={{ fontSize: 12, color: t.textTertiary }}>左右滑动查看</Text>
+            <Text style={{ fontSize: 12, color: t.textTertiary }}>一周一览</Text>
           )}
         </View>
       </View>
@@ -180,39 +190,34 @@ export default function ScheduleScreen() {
           <View style={{ width: TIME_COL, paddingTop: HEADER_H }}>
             {PERIODS.map((p) => (
               <View key={p.index} style={{ height: ROW_H, alignItems: 'center', paddingTop: 3 }}>
-                <Text style={{ fontSize: 10.5, fontWeight: '700', color: t.textTertiary }}>{p.index}</Text>
-                <Text style={{ fontSize: 8, color: t.textTertiary, marginTop: 2 }}>{p.start}</Text>
-                <Text style={{ fontSize: 8, color: t.textTertiary, marginTop: 1 }}>{p.end}</Text>
+                <Text style={{ fontSize: 9.5, fontWeight: '700', color: t.textTertiary }}>{p.index}</Text>
+                <Text style={{ fontSize: 7, color: t.textTertiary, marginTop: 2 }}>{p.start}</Text>
+                <Text style={{ fontSize: 7, color: t.textTertiary, marginTop: 1 }}>{p.end}</Text>
               </View>
             ))}
           </View>
 
-          <ScrollView
-            horizontal
-            ref={hRef}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingRight: 8 }}
-          >
-            <View style={{ width: COL_W * 7 }}>
-              <View style={{ flexDirection: 'row', height: HEADER_H, paddingBottom: 8 }}>
+          <View style={{ flex: 1 }} onLayout={(e) => setGridW(e.nativeEvent.layout.width)}>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', height: HEADER_H, paddingBottom: 6, alignItems: 'flex-end' }}>
                 {dates.map((d, i) => {
                   const isToday = isoDate(d) === isoDate(now);
                   return (
-                    <View key={i} style={{ width: COL_W, alignItems: 'center', justifyContent: 'flex-end' }}>
-                      <Text style={{ fontSize: 11, color: isToday ? t.primary : t.textTertiary }}>周{WEEKDAY_LABELS[i]}</Text>
+                    <View key={i} style={{ width: colW, alignItems: 'center', justifyContent: 'flex-end' }}>
+                      <Text style={{ fontSize: 9.5, color: isToday ? t.primary : t.textTertiary }}>{COL_LABELS[i] ?? ''}</Text>
                       <View
                         style={{
                           marginTop: 3,
-                          minWidth: 24,
-                          height: 22,
-                          paddingHorizontal: 5,
+                          minWidth: 20,
+                          height: 20,
+                          paddingHorizontal: 3,
                           borderRadius: 8,
                           alignItems: 'center',
                           justifyContent: 'center',
                           backgroundColor: isToday ? t.primary : 'transparent',
                         }}
                       >
-                        <Text style={{ fontSize: 12, fontWeight: isToday ? '700' : '500', color: isToday ? t.onPrimary : t.textSecondary }}>
+                        <Text style={{ fontSize: 10.5, fontWeight: isToday ? '700' : '500', color: isToday ? t.onPrimary : t.textSecondary }}>
                           {d.getDate()}
                         </Text>
                       </View>
@@ -241,7 +246,7 @@ export default function ScheduleScreen() {
                     <View
                       key={i}
                       style={{
-                        width: COL_W,
+                        width: colW,
                         borderLeftWidth: StyleSheet.hairlineWidth,
                         borderLeftColor: i === 0 ? 'transparent' : `${t.border}80`,
                         backgroundColor: i + 1 === today ? `${t.primary}08` : 'transparent',
@@ -259,11 +264,11 @@ export default function ScheduleScreen() {
                         position: 'absolute',
                         top: top * ROW_H + 3,
                         height: span * ROW_H - 6,
-                        left: (slot.day - 1) * COL_W + 3,
-                        width: COL_W - 6,
+                        left: (slot.day - 1) * colW + 2,
+                        width: colW - 4,
                         borderRadius: 9,
-                        paddingHorizontal: 6,
-                        paddingVertical: 5,
+                        paddingHorizontal: 3,
+                        paddingVertical: 3,
                         overflow: 'hidden',
                         backgroundColor: `${t.surfaceAlt}CC`,
                         borderWidth: 1,
@@ -271,10 +276,10 @@ export default function ScheduleScreen() {
                         borderColor: t.border,
                       }}
                     >
-                      <Text style={{ fontSize: 9, fontWeight: '700', color: t.textTertiary }}>非本周</Text>
+                      <Text style={{ fontSize: 8, fontWeight: '700', color: t.textTertiary }}>非本周</Text>
                       <Text
-                        style={{ fontSize: 10, color: t.textTertiary, marginTop: 2 }}
-                        numberOfLines={span > 1 ? 3 : 1}
+                        style={{ fontSize: 8.5, lineHeight: 11, color: t.textTertiary, marginTop: 2 }}
+                        numberOfLines={span > 1 ? 5 : 1}
                       >
                         {course.name}
                       </Text>
@@ -285,7 +290,7 @@ export default function ScheduleScreen() {
                 {blocks.map(({ course, slot }) => {
                   const { top, span } = slotSpan(slot.start, slot.end);
                   const c = courseColors(course.colorIndex, t.scheme);
-                  const width = COL_W - 6;
+                  const width = colW - 6;
                   return (
                     <Pressable
                       key={slot.id}
@@ -294,32 +299,28 @@ export default function ScheduleScreen() {
                         position: 'absolute',
                         top: top * ROW_H + 3,
                         height: span * ROW_H - 6,
-                        left: (slot.day - 1) * COL_W + 3,
+                        left: (slot.day - 1) * colW + 3,
                         width,
                         backgroundColor: c.bg,
                         borderRadius: 9,
-                        paddingHorizontal: 6,
-                        paddingVertical: 5,
+                        paddingHorizontal: 3,
+                        paddingVertical: 3,
                         overflow: 'hidden',
                         opacity: pressed ? 0.75 : 1,
-                        borderLeftWidth: 2.5,
+                        borderLeftWidth: 2,
                         borderLeftColor: c.fg,
                       })}
                     >
-                      <Text style={{ fontSize: 10.5, fontWeight: '700', color: c.fg }} numberOfLines={span > 1 ? 3 : 2}>
+                      <Text style={{ fontSize: 9, lineHeight: 11.5, fontWeight: '700', color: c.fg }} numberOfLines={span > 1 ? 5 : 2}>
                         {course.name}
                       </Text>
-                      {span > 1 ? (
-                        <Text style={{ fontSize: 9, color: c.fg, opacity: 0.75, marginTop: 3 }} numberOfLines={2}>
-                          {slot.room ?? course.room ?? ''}
-                        </Text>
-                      ) : null}
+
                     </Pressable>
                   );
                 })}
               </View>
             </View>
-          </ScrollView>
+          </View>
         </View>
 
         {courses.length === 0 ? (

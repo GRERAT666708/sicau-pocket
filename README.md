@@ -1,9 +1,9 @@
 # 川农口袋 · 四川农业大学校园助手
 
-一个为四川农业大学（SICAU）同学做的轻量校园 App，用一套 TypeScript 代码写出来，目前**只提供 Android 版本**。
+一个为四川农业大学（SICAU）同学做的轻量校园 App，用一套 TypeScript 代码写出来，目前**只提供 Android 版本**（另有 Web 版可在浏览器预览）。
 
 > ⚠️ **暂不支持 iOS**：仓库里没有任何 iOS 构建产物，也没有 App Store 版本。代码本身是跨平台的（Expo + React Native），
-> 但 iOS 端还需要 Apple 开发者账号（$99/年）+ 真机签名才能装，这部分**没有做**。iPhone 同学请先等后续适配。
+> 但 iOS 端还需要 Apple 开发者账号（$99/年）+ 真机签名才能装，这部分**没有做**。iPhone 同学请先用 Web 版，或等后续适配。
 
 产品思路参考了郑州大学的开源项目 [ZZUPocket](https://github.com/3beuml/ZZUPocket)（Kotlin + Jetpack Compose），本项目用 Expo + React Native 重写，并换成川农的作息、学期与信息架构。
 
@@ -48,7 +48,11 @@
 | 为什么不直接读 AsyncStorage | 小组件跑在系统进程里，拿不到 RN 的存储；写文件是最稳的桥 |
 | 刷新时机 | 系统 30 分钟一次（`updatePeriodMillis`）+ 点「刷新」+ 打开 App |
 
+踩过的坑：`RemoteViews` 只允许白名单里的控件，布局里用 `<View>` 当色条或占位符会直接 `InflateException: Class not allowed to be inflated android.view.View`，
+系统小组件选择器里表现为「Can't load widget」。所有色条/占位都要用 `<TextView>`（或 `ImageView`）代替。
 
+之所以做成 config plugin 而不是直接改 `android/`：`android/` 是 `expo prebuild` 生成物、被 `.gitignore` 忽略，
+插件会在每次 prebuild 时把 Kotlin 源码、两个布局、`appwidget-provider` 配置和 `AndroidManifest` 里的两个 `<receiver>` 重新注入。
 
 ![桌面小组件](docs/screenshots/widgets.png)
 
@@ -73,7 +77,9 @@ openid 只存在本机 AsyncStorage，不上传、不进日志。想解绑在页
 下次进这个页面自动按顺序填回去（注入 JS 依次触发 change，等上一级选项加载完再填下一级），
 就不用每次点四次下拉。卡片上会显示记住的房间名。
 
-
+> 顺带记一下：`elec.sicau.edu.cn`（ECMS）是后勤侧的电控系统，登录是「用户名 + 密码」的
+> 本地账号（无注册/无统一身份认证入口），跟公众号是两套账号，学生通常拿不到——
+> 这也是为什么走「一卡通 H5」而不是直连 ECMS 接口。
 
 ## 空闲教室（真实数据）
 
@@ -113,7 +119,18 @@ openid 只存在本机 AsyncStorage，不上传、不进日志。想解绑在页
 
 **作息时间已按这张官图对齐**：第一讲 08:10–08:55 / 09:05–09:50，第二讲 10:10–10:55 / 11:05–11:50，第三讲 14:20–15:05 / 15:15–16:00，第四讲 16:20–17:05 / 17:15–18:00，第五讲 19:30–20:15 / 20:25–21:10（共 10 节，`lib/periods.ts`）。
 
+## 完美校园（电费 / 一卡通）
 
+川农的宿舍电费充值和一卡通余额都在**完美校园**（新开普）里。这两块我们**没有接入**，原因写清楚，免得以后重复踩：
+
+| 尝试 | 结果 |
+| --- | --- |
+| 直接调接口 | `api.17wanxiao.com` 公网不可访问（两个 A 记录 443 全超时）；App 实际用的 `app.17wanxiao.com` / `app.59wanmei.com` 可达但无公开文档 |
+| 抓包逆向 | App 带加固，检测到系统代理或自签证书就弹「安全环境未配置成功」，请求在本地被拦，一条都没发出去（安卓模拟器、iPhone 真机都是这个报错） |
+| 借微信「智慧川农」里的一卡通 | 那个页面走微信私有加密通道，只抓到 `szextshort.weixin.qq.com/mmtls` 这类混淆流量 |
+
+所以电费、一卡通两页展示的是**演示数据**，页面上有明确说明和「去完美校园查看」的入口（`我的 → 宿舍电费 / 校园一卡通`）。
+要是哪天学校开放了一卡通查询页、或者你拿到了接口说明，把它补进 `docs/sicau-api.md` 的 6.2 节就能接。
 
 ## 截图
 
@@ -192,6 +209,195 @@ v0.7.0 起整套 UI 换成「半透明玻璃卡片 + 渐变背景」的风格：
 > 安卓上 `expo-blur` 是近似模糊（真实高斯模糊只有 iOS 有），所以安卓的玻璃会略实一点，保证文字可读。
 
 
+
+## 已经打好包的 APK
+
+`../sicau-pocket-0.7.2.apk`（102MB，`io.github.grerat666708.sicaupocket`，versionCode 1）——
+已在 Android 模拟器里装上并跑通，装到手机上就是独立 App，不需要 Expo Go。
+
+体积偏大是因为**三个 ABI 都打进去了**。要小一点可以：
+
+- 只留 arm64：`gradle :app:assembleRelease -PreactNativeArchitectures=arm64-v8a`
+
+## 本地构建（不用 Expo 账号）
+
+```bash
+./scripts/build-apk-local.sh      # 约 5–10 分钟（首次要下 ~2GB 依赖）
+```
+
+依赖已经装好在仓库外一层：`tools/node`（Node 26）、`tools/jdk17`（Corretto 17）、
+`tools/gradle-9.4.1`、`android-sdk`（platform 37 / build-tools 36 / NDK 27.1 / CMake 3.22.1）。
+
+脚本会自动做几件这台机器特有的事：
+
+| 问题 | 处理 |
+|---|---|
+| `dl.google.com` 只有几 KB/s | Gradle 仓库换成阿里云镜像（google / central / gradle-plugin） |
+| 没有 build-tools 37（AGP 9 默认要） | `init.d/bt36.gradle` 把 `buildToolsVersion` 钉到 36.0.0 |
+| AGP 要写 `~/.android` 但被沙箱拒 | `HOME` / `ANDROID_USER_HOME` 指向工作区内可写目录 |
+| Gradle 9.4.1 需要 JDK 17 | `JAVA_HOME=tools/jdk17/Contents/Home` |
+
+
+## 打包成能直接装的 APK（EAS 云构建）
+
+不用装 Android Studio，也不需要本地 JDK/Gradle，用 Expo 的云构建：
+
+```bash
+# 1. 注册并登录 Expo 账号（免费）
+npx eas-cli@latest login
+
+# 2. 首次在项目里初始化（会读 app.json / eas.json，生成 projectId）
+npx eas-cli@latest build:configure
+
+# 3. 出 APK（preview profile 配的 buildType: apk）
+npx eas-cli@latest build -p android --profile preview
+```
+
+构建完会打印一个 `.apk` 下载链接，手机上下载直接安装（需要在系统里允许"安装未知来源应用"）。
+
+不想记命令的话，直接跑仓库里的脚本：
+
+```bash
+./scripts/build-apk.sh          # preview → APK
+./scripts/build-apk.sh --ios    # iOS
+./scripts/build-apk.sh --local  # 本机构建（需 SDK + JDK 17）
+```
+
+几个注意点：
+
+- **包名先换成自己的**：`app.json` 里 `android.package` / `ios.bundleIdentifier` 现在是 `com.sicau.pocket`，用的是学校域名，商店审核有风险。改成你自己的反写域名，最省事的是用 GitHub：
+  ```json
+  "android": { "package": "io.github.你的GitHub用户名.sicaupocket" },
+  "ios": { "bundleIdentifier": "io.github.你的GitHub用户名.sicaupocket" }
+  ```
+  包名一旦发布就不能改，定之前想清楚。
+- **版本号自动递增**：`eas.json` 里 `preview` / `production` 都开了 `autoIncrement: true`，`appVersionSource: remote` 由 EAS 托管 —— 每构建一次 `versionCode`（Android）和 `buildNumber`（iOS）自动 +1，不用手动改；`version`（对用户显示的 0.7.x）还是手动改 `app.json`。
+- **免费额度**：Expo 免费账号每月有几次 Android 构建，排队时间视情况 5–30 分钟。
+- **本地构建（可选）**：`npx eas-cli@latest build -p android --profile preview --local` 需要本机有 Android SDK + JDK 17；没有的话就用云构建。
+- **iOS**：暂不支持。要出 iOS 包需要 Apple 开发者账号（$99/年），当前项目没有做这部分适配与签名。
+
+### 自己的 GitHub 主页链接在哪
+
+1. 登录 GitHub，右上角头像 → **Your profile**，地址栏就是 `https://github.com/你的用户名`。
+2. 或者直接访问 `https://github.com/settings/profile`，页面右上角会显示 `Your personal account` 那一栏的链接。
+3. 命令行也能看：`git config --get user.name`（不一定是用户名），更稳的是 `gh api user -q .login`（装了 GitHub CLI 的话）。
+
+本项目已经按 `https://github.com/GRERAT666708` 设好：包名 `io.github.grerat666708.sicaupocket`（GitHub 用户名大小写不敏感，但 Android 包名只能小写）。
+
+## 本地运行
+
+> Node 已经装好（`tools/node`，v26.13.0 + npm 11 + eas-cli 27.5），并已写进 `~/.zshrc` 的 PATH，新开终端直接能用 `node` / `npx` / `eas`。
+
+> **只想赶快跑起来？** 在项目根目录执行一条命令（开模拟器 + Metro + 打开 App 全包了）：
+>
+> ```bash
+> ./scripts/dev.sh          # 带窗口的模拟器；--headless 无窗口；--clear 清 Metro 缓存
+> ./scripts/stop-dev.sh     # 关掉模拟器和 Metro
+> ```
+>
+> 第一次启动约 40 秒，之后热更新会自动生效，改代码不用重启。
+
+本机没有全局 Node 时，使用 DSH 自带运行时：
+
+```bash
+export PATH="/Users/grerat/.dsh/dsh-runtimes/dsh-primary-runtime/dependencies/node/bin:$PATH"
+cd sicau-pocket
+PNPM=/Users/grerat/.dsh/dsh-runtimes/dsh-primary-runtime/dependencies/pnpm/bin/pnpm.cjs
+node $PNPM install
+node $PNPM exec expo start    # 扫码用 Expo Go 打开，或按 w 打开网页预览
+```
+
+其他常用命令：
+
+```bash
+node $PNPM typecheck      # tsc --noEmit
+node $PNPM exec expo start --web        # 只开 Web 预览
+node $PNPM exec expo export -p web      # 导出静态 Web 版到 dist/
+```
+
+> 没有全局 npm 的环境里，把 `npx expo …` 换成 `node <pnpm.cjs 路径> exec expo …`；
+> Expo CLI 会写 `~/.expo`，如果该目录不可写，用 `HOME=$PWD/.home` 前置重定向。
+
+## 在安卓模拟器里运行
+
+本机没有安装 Android Studio，用的是命令行 Android SDK + AVD（Pixel 6 / Android 15）。完整环境清单和踩坑记录见 [docs/android-setup.md](docs/android-setup.md)，跑起来只要两条命令：
+
+```bash
+./scripts/dev.sh               # 一条命令：起模拟器 → 等开机 → 起 Metro → 端口反代 → 打开 App
+./scripts/stop-dev.sh          # 全部关掉
+```
+
+`dev.sh` 还带两个兜底：冷启动时 Expo Go 偶尔抢跑报 `runtime not ready`，脚本会自动重开一次；
+Metro 已经在跑时直接复用（`--no-metro` 可强制跳过启动）。
+
+手动分步的话：
+
+```bash
+./scripts/emulator.sh          # 启动模拟器（加 --headless 则无窗口）
+./scripts/open-in-emulator.sh  # 把 Metro 端口映射进去并用 Expo Go 打开
+```
+
+等价的手写命令：
+
+```bash
+SDK=/path/to/android-sdk
+export HOME="$PWD/android-user"                 # adb / emulator 需要可写的 HOME
+export ANDROID_AVD_HOME="$HOME/avd"
+
+$SDK/emulator/emulator -avd sicau -no-audio -no-boot-anim -gpu swiftshader_indirect &
+$SDK/platform-tools/adb reverse tcp:8081 tcp:8081
+$SDK/platform-tools/adb shell am start -a android.intent.action.VIEW -d "exp://127.0.0.1:8081"
+$SDK/platform-tools/adb exec-out screencap -p > shot.png
+```
+
+## 怎么生成能安装的 APK / IPA
+
+**路线 A：EAS 云构建（推荐，不用配置本机 Android 环境）**
+
+```bash
+npm i -g eas-cli          # 需要本机有 Node.js（LTS 即可）
+eas login                 # 免费注册 expo.dev 账号
+eas build -p android --profile preview     # 云端构建，产出可直接安装的 APK
+# iOS：暂不支持（需要 Apple 开发者账号 $99/年，当前未适配）
+eas build -p android --profile production  # AAB，用于 Google Play 上架
+eas build -p ios --profile production      # IPA，用于 App Store 上架
+```
+
+**路线 B：本地构建（需要 JDK 17 + Android SDK + 能访问 Maven 仓库）**
+
+```bash
+npx expo prebuild -p android          # 生成原生 android/ 工程
+cd android
+./gradlew assembleRelease             # 产物：android/app/build/outputs/apk/release/app-release.apk
+# 调试包：./gradlew assembleDebug → app/build/outputs/apk/debug/app-debug.apk
+```
+
+首次构建会自动下载 Gradle 与依赖（数百 MB），国内网络建议挂代理或配置阿里云 Maven 镜像。
+
+**路线 C：开发构建（要自己写原生模块时用）**
+
+```bash
+npx expo install expo-dev-client
+eas build -p android --profile development   # 产出 dev 客户端，之后改 JS 不用重新打包
+```
+
+`eas.json` 已配置 development / preview / production 三套 profile；`app.json` 里包名是 `com.sicau.pocket`，**上架前请改成你自己拥有的域名反写**（见下方「关于包名和域名」）。
+
+## 关于包名和域名
+
+Android 的 `applicationId` 和 iOS 的 `bundleIdentifier` 采用「反写域名」的约定，例如 `com.sicau.pocket`。它的作用是：
+
+- 手机和应用商店用它唯一标识你的 App；
+- 域名所有者才能发出这种包名的应用（Google Play / App Store 会核对域名归属，收到投诉可能下架）。
+
+所以：
+
+- **不需要真的买域名**。如果你没有 `sicau.edu.cn` 的授权，用 `com.sicau.pocket` 属于占用学校域名，有被下架的风险。
+- 只要把包名换成「反写后仍然唯一、且你能自证」的字符串即可，例如：
+  - `io.github.你的GitHub用户名.sicaupocket`（你有这个 GitHub 账号就成立，商店也认）
+  - `com.你的名字.sicaupocket`
+- 只改 `app.json` 里的 `ios.bundleIdentifier` / `android.package`，重新构建即可，代码不用动。
+- 包名一旦上架就不能再改（等于换了新 App），所以第一次发布前定好。
 
 ## 导入真实课表
 

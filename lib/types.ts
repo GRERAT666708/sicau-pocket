@@ -20,6 +20,16 @@ export type Course = {
   note?: string;
 };
 
+/** 归档的学期：切走/新建学期时，把当时的课表和作息一起存下来 */
+export type SemesterArchive = {
+  id: string;
+  termName: string;
+  termStart: string;
+  totalWeeks: number;
+  courses: Course[];
+  archivedAt: number;
+};
+
 export type FocusSession = {
   id: string;
   tag: string;

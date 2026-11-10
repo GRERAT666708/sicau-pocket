@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react';
 import { campusOfMajor } from './major';
 import { DEMO_COURSES } from './demo';
 import { isoDate, mondayOf } from './date';
-import type { AppSettings, Course, FocusSession, User } from './types';
+import type { AppSettings, Course, FocusSession, SemesterArchive, User } from './types';
 
 const STORAGE_KEY = '@sicau-pocket/state/v1';
 
@@ -34,11 +34,15 @@ export function guessTerm(now = new Date()): { termStart: string; termName: stri
 
 const guessed = guessTerm();
 
+/** 川农 2026-2027 学年第一学期按教务处校历 9 月 7 日（周一）开学 */
+export const TERM_START_2026 = '2026-09-07';
+export const TERM_NAME_2026 = '2026-2027 学年第一学期';
+
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
-  termStart: guessed.termStart,
+  termStart: TERM_START_2026,
   totalWeeks: 18,
-  termName: guessed.termName,
+  termName: TERM_NAME_2026,
   demoSeeded: false,
   campus: '雅安',
   campusSource: undefined,
@@ -48,6 +52,8 @@ export type State = {
   hydrated: boolean;
   settings: AppSettings;
   courses: Course[];
+  /** 归档的历史学期（当前学期不在这里） */
+  semesters: SemesterArchive[];
   sessions: FocusSession[];
   user: User | null;
 };
@@ -56,6 +62,7 @@ let state: State = {
   hydrated: false,
   settings: DEFAULT_SETTINGS,
   courses: [],
+  semesters: [],
   sessions: [],
   user: null,
 };
@@ -99,6 +106,7 @@ function persist() {
       JSON.stringify({
         settings: state.settings,
         courses: state.courses,
+        semesters: state.semesters,
         sessions: state.sessions,
         user: state.user,
       }),
@@ -117,6 +125,7 @@ export async function hydrate() {
         hydrated: true,
         settings: { ...DEFAULT_SETTINGS, demoSeeded: true },
         courses,
+        semesters: [],
         sessions: [],
         user: null,
       };
@@ -135,6 +144,7 @@ export async function hydrate() {
       hydrated: true,
       settings,
       courses: data.courses ?? [],
+      semesters: (data as Partial<State>).semesters ?? [],
       sessions: data.sessions ?? [],
       user: data.user ?? null,
     };
@@ -181,11 +191,80 @@ export const actions = {
   setUser(user: User | null) {
     set({ user });
   },
+  /** 把当前学期存成归档，返回归档 id（当前课程为空就不存） */
+  archiveCurrent(patch?: Partial<AppSettings>): string | null {
+    if (state.courses.length === 0) return null;
+    const settings = { ...state.settings, ...(patch ?? {}) };
+    const item: SemesterArchive = {
+      id: uid('sem'),
+      termName: settings.termName,
+      termStart: settings.termStart,
+      totalWeeks: settings.totalWeeks,
+      courses: state.courses,
+      archivedAt: Date.now(),
+    };
+    set({ semesters: [item, ...state.semesters] });
+    return item.id;
+  },
+  /** 新建一个空学期（默认先把当前学期归档） */
+  startNewSemester(term: { termName: string; termStart: string; totalWeeks: number }, archive = true) {
+    const archived: SemesterArchive | null =
+      archive && state.courses.length > 0
+        ? {
+            id: uid('sem'),
+            termName: state.settings.termName,
+            termStart: state.settings.termStart,
+            totalWeeks: state.settings.totalWeeks,
+            courses: state.courses,
+            archivedAt: Date.now(),
+          }
+        : null;
+    set({
+      courses: [],
+      semesters: archived ? [archived, ...state.semesters] : state.semesters,
+      settings: { ...state.settings, ...term, demoSeeded: false },
+    });
+  },
+  /** 切到某个归档学期：当前学期先归档，再载入选中的 */
+  switchSemester(id: string) {
+    const target = state.semesters.find((s) => s.id === id);
+    if (!target) return;
+    const rest = state.semesters.filter((s) => s.id !== id);
+    const keep: SemesterArchive | null =
+      state.courses.length > 0
+        ? {
+            id: uid('sem'),
+            termName: state.settings.termName,
+            termStart: state.settings.termStart,
+            totalWeeks: state.settings.totalWeeks,
+            courses: state.courses,
+            archivedAt: Date.now(),
+          }
+        : null;
+    set({
+      courses: target.courses,
+      semesters: keep ? [keep, ...rest] : rest,
+      settings: {
+        ...state.settings,
+        termName: target.termName,
+        termStart: target.termStart,
+        totalWeeks: target.totalWeeks,
+        demoSeeded: false,
+      },
+    });
+  },
+  removeSemester(id: string) {
+    set({ semesters: state.semesters.filter((s) => s.id !== id) });
+  },
+  renameSemester(id: string, termName: string) {
+    set({ semesters: state.semesters.map((s) => (s.id === id ? { ...s, termName } : s)) });
+  },
   async resetAll() {
     state = {
       hydrated: true,
       settings: { ...DEFAULT_SETTINGS },
       courses: [],
+      semesters: [],
       sessions: [],
       user: null,
     };
