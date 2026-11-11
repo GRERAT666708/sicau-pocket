@@ -1,6 +1,6 @@
 {
   "name": "sicau-pocket",
-  "version": "0.10.13",
+  "version": "0.10.14",
   "description": "川农口袋 · 四川农业大学校园助手（iOS / Android）",
   "main": "expo-router/entry",
   "private": true,
