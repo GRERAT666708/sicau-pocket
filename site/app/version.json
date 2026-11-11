@@ -1,14 +1,13 @@
 {
-  "version": "0.10.17",
-  "versionCode": 27,
+  "version": "0.10.16",
+  "versionCode": 26,
   "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.16.apk",
   "fallbackUrl": "https://sicau-pocket.com/download.html",
-  "size": 35327801,
-  "sha256": "950714cf02b0699daf712af68de4135e7f8e8da0864c9c766d3ee61c17efaa7f",
+  "size": 35328157,
+  "sha256": "9c851baf6e169cb51e9a0bf8a6c61cff58e22aab42643a337f26d5900660f6dd",
   "releasedAt": "2026-11-11",
   "minimumVersionCode": 1,
   "notes": [
-    "修复课表列头被裁",
-    "新增检查更新"
+    "v0.10.16 更新"
   ]
 }

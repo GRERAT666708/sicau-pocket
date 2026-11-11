@@ -25,10 +25,12 @@ const ENDPOINTS = [
   // 本地调试：EXPO_PUBLIC_UPDATE_URL=http://10.0.2.2:8080/app/version.json
   process.env.EXPO_PUBLIC_UPDATE_URL ?? '',
   'https://sicau-pocket.com/app/version.json',
+  // jsdelivr 在国内比 raw.githubusercontent 稳，仓库更新后几分钟生效
+  'https://cdn.jsdelivr.net/gh/GRERAT666708/sicau-pocket@main/site/app/version.json',
   'https://raw.githubusercontent.com/GRERAT666708/sicau-pocket/main/site/app/version.json',
 ];
 
-const KEY_LAST_CHECK = '@sicau-pocket/update/lastCheckAt';
+const KEY_LAST_CHECK = '@sicau-pocket/update/lastCheckAtV2';
 const KEY_IGNORE = '@sicau-pocket/update/ignoreCode';
 
 /** 当前安装包的 versionCode；取不到就退回 0（只会导致「提示更新」而不是漏提示） */
@@ -73,8 +75,9 @@ export type UpdateResult = {
 
 export async function checkForUpdate(): Promise<UpdateResult> {
   const manifest = await fetchManifest();
-  await AsyncStorage.setItem(KEY_LAST_CHECK, String(Date.now()));
+  // 拉失败别记时间，下次启动还会重试；成功才记，12 小时内不再打扰
   if (!manifest) return { manifest: null, hasUpdate: false, ignored: false };
+  await AsyncStorage.setItem(KEY_LAST_CHECK, String(Date.now()));
 
   const ignore = Number((await AsyncStorage.getItem(KEY_IGNORE)) ?? 0);
   const hasUpdate = manifest.versionCode > APP_VERSION_CODE;

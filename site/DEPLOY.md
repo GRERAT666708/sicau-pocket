@@ -189,3 +189,33 @@ A：34 MB 建议走 CDN（已有），Android 浏览器断点续传支持不好�
 
 **Q：备案号写什么？**
 A：备案通过后在阿里云备案控制台能看到「蜀ICP备XXXXXXXX号-1」，页脚格式一般是 `蜀ICP备2026xxxxxx号-1`。
+
+
+---
+
+## 发版流程（含 App 内「检查更新」）
+
+App 启动会拉 `https://sicau-pocket.com/app/version.json`（另有 jsdelivr / GitHub raw 两个备用源），
+比较 `versionCode` 后决定是否在「我的」页顶部提示更新。
+
+```bash
+# 1) 改版本号：app.json 的 expo.version / expo.android.versionCode，以及 lib/version.ts 的 APP_VERSION / APP_BUILD
+bash scripts/build-apk-local.sh --arm64          # 脚本会校验两处版本号一致
+
+# 2) 拷安装包（latest 给下载页，带版本号的给 version.json 里的 apkUrl）
+cp ../sicau-pocket-vX.Y.Z-arm64.apk site/apk/sicau-pocket-latest.apk
+cp ../sicau-pocket-vX.Y.Z-arm64.apk site/apk/sicau-pocket-X.Y.Z.apk
+
+# 3) 生成版本清单（自动读 app.json、算 sha256 与体积）
+node scripts/gen-version-json.mjs ../sicau-pocket-vX.Y.Z-arm64.apk --notes notes.txt
+
+# 4) 部署
+ossutil sync ./site/ oss://sicau-pocket-site/ --delete
+ossutil set-meta oss://sicau-pocket-site/apk/sicau-pocket-latest.apk \
+  Content-Type:application/vnd.android.package-archive
+ossutil set-meta oss://sicau-pocket-site/apk/sicau-pocket-X.Y.Z.apk \
+  Content-Type:application/vnd.android.package-archive
+```
+
+`version.json` 里 `apkUrl` 指向带版本号的文件，这样 CDN 可以放心长缓存；
+`size` / `sha256` 用于客户端显示体积、也方便用户自己核对安装包。

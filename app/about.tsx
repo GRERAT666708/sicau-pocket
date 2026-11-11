@@ -114,11 +114,15 @@ export default function AboutScreen() {
               icon="cloud-download-outline"
               title={update.checking ? '正在检查更新…' : '检查更新'}
               subtitle={
-                update.hasUpdate && update.manifest
-                  ? `发现 v${update.manifest.version}${formatSize(update.manifest.size) ? ` · ${formatSize(update.manifest.size)}` : ''}，点这里下载`
-                  : update.checked
-                    ? `当前 v${APP_VERSION}，已是最新`
-                    : `当前 v${APP_VERSION}`
+                update.checking
+                  ? `当前 v${APP_VERSION}，正在检查…`
+                  : update.hasUpdate && update.manifest
+                    ? `发现 v${update.manifest.version}${formatSize(update.manifest.size) ? ` · ${formatSize(update.manifest.size)}` : ''}，点这里下载`
+                    : update.checked && update.manifest
+                      ? `当前 v${APP_VERSION}，已是最新`
+                      : update.checked
+                        ? `当前 v${APP_VERSION}，检查失败（可能没联网），点这里重试`
+                        : `当前 v${APP_VERSION}`
               }
               onPress={() => {
                 if (update.hasUpdate && update.manifest) {
