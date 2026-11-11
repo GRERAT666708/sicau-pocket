@@ -2,12 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge, Card, ListRow, SectionTitle } from '@/components/UIKit';
 import { radius, spacing } from '@/constants/theme';
 import { currentWeek, useAppState } from '@/lib/store';
 import { APP_VERSION } from '@/lib/version';
+import { formatSize, useUpdate } from '@/lib/update';
 import { effectiveCampus } from '@/lib/campusState';
 import { useTheme } from '@/hooks/useTheme';
 import { AppBackground } from '@/components/AppBackground';
@@ -42,6 +43,9 @@ export default function MeScreen() {
   const { user, settings, courses, sessions } = useAppState();
   const week = currentWeek(settings);
 
+  const update = useUpdate();
+  const showUpdate = update.hasUpdate && !update.ignored && !!update.manifest;
+
   const campus = effectiveCampus(settings);
   const name = settings.major || user?.name || '未设置专业';
   const initial = name.slice(0, 1);
@@ -53,6 +57,46 @@ export default function MeScreen() {
       showsVerticalScrollIndicator={false}
     >
       <Text style={{ fontSize: 24, fontWeight: '700', color: t.text }}>我的</Text>
+
+      {showUpdate ? (
+        <GlassPressable
+          onPress={() => {
+            const url = update.manifest?.apkUrl;
+            if (url) void Linking.openURL(url);
+          }}
+          radiusValue={radius.md}
+          intensity={18}
+          style={{ marginTop: spacing.md }}
+          contentStyle={{ paddingVertical: 12, paddingHorizontal: 14 }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
+            <View
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 11,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: t.primarySoft,
+                marginRight: 10,
+              }}
+            >
+              <Ionicons name="arrow-up-circle-outline" size={19} color={t.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: t.text }} numberOfLines={1}>
+                发现新版本 v{update.manifest?.version}
+              </Text>
+              <Text style={{ fontSize: 10.5, color: t.textTertiary, marginTop: 2 }} numberOfLines={1}>
+                当前 v{APP_VERSION}
+                {formatSize(update.manifest?.size) ? ` · ${formatSize(update.manifest?.size)}` : ''}
+                {' · 点这里下载安装包'}
+              </Text>
+            </View>
+            <Text style={{ fontSize: 11.5, fontWeight: '700', color: t.primary }}>更新</Text>
+          </View>
+        </GlassPressable>
+      ) : null}
 
       <LinearGradient
         colors={[t.primary, t.primaryDark]}

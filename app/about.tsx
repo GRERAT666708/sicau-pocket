@@ -7,6 +7,7 @@ import { Badge, Card, GhostButton, ListRow, SectionTitle } from '@/components/UI
 import { spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { APP_VERSION } from '@/lib/version';
+import { formatSize, useUpdate } from '@/lib/update';
 
 const FEATURES: { icon: keyof typeof Ionicons.glyphMap; title: string; desc: string }[] = [
   { icon: 'sunny-outline', title: '今天', desc: '一眼看清现在上什么课、还有多久下课' },
@@ -16,6 +17,7 @@ const FEATURES: { icon: keyof typeof Ionicons.glyphMap; title: string; desc: str
 ];
 
 export default function AboutScreen() {
+  const update = useUpdate(false);
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -102,6 +104,41 @@ export default function AboutScreen() {
               onPress={() => router.push('/privacy')}
               style={{ marginTop: 10 }}
             />
+          </Card>
+        </View>
+
+        <View style={{ marginTop: spacing.xl }}>
+          <SectionTitle title="版本" />
+          <Card style={{ paddingVertical: 2, paddingHorizontal: 16 }}>
+            <ListRow
+              icon="cloud-download-outline"
+              title={update.checking ? '正在检查更新…' : '检查更新'}
+              subtitle={
+                update.hasUpdate && update.manifest
+                  ? `发现 v${update.manifest.version}${formatSize(update.manifest.size) ? ` · ${formatSize(update.manifest.size)}` : ''}，点这里下载`
+                  : update.checked
+                    ? `当前 v${APP_VERSION}，已是最新`
+                    : `当前 v${APP_VERSION}`
+              }
+              onPress={() => {
+                if (update.hasUpdate && update.manifest) {
+                  void Linking.openURL(update.manifest.apkUrl).catch(() => {});
+                } else {
+                  void update.check(true);
+                }
+              }}
+            />
+            {update.hasUpdate && update.manifest ? (
+              <>
+                <View style={{ height: 1, backgroundColor: t.border }} />
+                <ListRow
+                  icon="close-circle-outline"
+                  title="忽略这个版本"
+                  subtitle={`不再提示 v${update.manifest.version}`}
+                  onPress={() => void update.dismiss()}
+                />
+              </>
+            ) : null}
           </Card>
         </View>
 
