@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /apk/
+
+Sitemap: https://sicau-pocket.com/sitemap.xml
