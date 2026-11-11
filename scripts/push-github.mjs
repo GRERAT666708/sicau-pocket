@@ -22,6 +22,9 @@ if (!TOKEN) {
 const SKIP_DIRS = new Set([
   'node_modules', 'android', 'dist', '.expo', '.home', '.gradle-home', '.git',
   'backups', '__pycache__', '.dsh', 'build',
+  // GitHub 要求 token 带 workflow scope 才能写 .github/workflows/，
+  // 当前 token 没开这个权限，会返回 404；工作流文件留在本地手动加。
+  '.github',
 ]);
 const SKIP_FILE = /\.(apk|zip|aab|keystore|jks)$/i;
 
