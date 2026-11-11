@@ -292,6 +292,7 @@ export default function ScheduleScreen() {
                   const c = courseColors(course.colorIndex, t.scheme);
                   const width = colW - 6;
                   const roomText = (slot.room ?? course.room ?? '').trim();
+                  const teacherText = (course.teacher ?? '').trim();
                   return (
                     <Pressable
                       key={slot.id}
@@ -312,15 +313,23 @@ export default function ScheduleScreen() {
                         borderLeftColor: c.fg,
                       })}
                     >
-                      <Text style={{ fontSize: 9, lineHeight: 11.5, fontWeight: '700', color: c.fg }} numberOfLines={span > 1 ? 4 : 1}>
+                      <Text style={{ fontSize: 9, lineHeight: 11.5, fontWeight: '700', color: c.fg }} numberOfLines={span > 1 ? 3 : 1}>
                         {course.name}
                       </Text>
                       {roomText ? (
                         <Text
                           style={{ fontSize: 7, lineHeight: 9, color: c.fg, opacity: 0.8, marginTop: 1 }}
-                          numberOfLines={span > 1 ? 3 : 1}
+                          numberOfLines={span > 1 ? 2 : 1}
                         >
                           {roomText}
+                        </Text>
+                      ) : null}
+                      {teacherText ? (
+                        <Text
+                          style={{ fontSize: 7, lineHeight: 9, color: c.fg, opacity: 0.72, marginTop: 1 }}
+                          numberOfLines={1}
+                        >
+                          {teacherText}
                         </Text>
                       ) : null}
 
