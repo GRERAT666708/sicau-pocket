@@ -1,4 +1,4 @@
-/* 川农口袋官网 · 交互脚本（无第三方依赖） */
+/* 青禾小站官网 · 交互脚本（无第三方依赖） */
 (function () {
   var APK = '/apk/sicau-pocket-latest.apk';
 
