@@ -1,8 +1,8 @@
 {
   "version": "0.10.16",
   "versionCode": 26,
-  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.16.apk",
-  "fallbackUrl": "https://sicau-pocket.com/download.html",
+  "apkUrl": "http://8.156.40.157/apk/sicau-pocket-latest.apk",
+  "fallbackUrl": "http://8.156.40.157/download.html",
   "size": 35328157,
   "sha256": "9c851baf6e169cb51e9a0bf8a6c61cff58e22aab42643a337f26d5900660f6dd",
   "releasedAt": "2026-11-11",
