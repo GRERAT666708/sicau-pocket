@@ -43,7 +43,7 @@ export default function MeScreen() {
   const { user, settings, courses, sessions } = useAppState();
   const week = currentWeek(settings);
 
-  const update = useUpdate();
+  const update = useUpdate(settings.autoUpdateCheck !== false);
   const showUpdate = update.hasUpdate && !update.ignored && !!update.manifest;
 
   const campus = effectiveCampus(settings);

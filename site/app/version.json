@@ -1,15 +1,15 @@
 {
-  "version": "0.10.17",
-  "versionCode": 27,
+  "version": "0.10.18",
+  "versionCode": 28,
   "apkUrl": "http://8.156.40.157/apk/sicau-pocket-latest.apk",
   "fallbackUrl": "http://8.156.40.157/download.html",
-  "size": 49074223,
-  "sha256": "8d8da6f8fd1ae34795ec4fc84255fd7831bf31ee813a5830f34eff5ac5440607",
+  "size": 49075195,
+  "sha256": "bf501c88fcbaa6c00444b45bd0f285bee9149eb9ae14eebd89e28c223c41f832",
   "releasedAt": "2026-11-12",
   "minimumVersionCode": 1,
   "notes": [
-    "课表支持「截图导入」：选一张教务网整周课表截图，本机离线识别后生成课表（不用登录）。",
-    "修复同一门课不同教室互相覆盖的问题（现在每个时段各自记教室）。",
-    "桌面小组件最多显示当天 6 门课（原来只显示前 3 门），超过才汇总「还有 N 门」。"
+    "隐私说明补上「版本检查」：只取一个 version.json，不带任何标识",
+    "新增「设置 → 自动检查更新」开关，关掉后只有手动点才会联网",
+    "课表截图导入 / 同课不同教室 / 小组件最多 6 门（同 v0.10.17）"
   ]
 }

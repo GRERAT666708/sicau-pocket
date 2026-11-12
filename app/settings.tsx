@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge, Card, ListRow, SectionTitle } from '@/components/UIKit';
 import { radius, spacing } from '@/constants/theme';
@@ -11,6 +11,7 @@ import { CAMPUSES, MAJOR_SUGGESTIONS, campusOfMajor, collegesOf } from '@/lib/ma
 import type { Campus } from '@/lib/types';
 import { useTheme } from '@/hooks/useTheme';
 import { campusSourceText, effectiveCampus } from '@/lib/campusState';
+import { APP_VERSION } from '@/lib/version';
 
 const THEMES: { key: 'system' | 'light' | 'dark'; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { key: 'system', label: '跟随系统', icon: 'phone-portrait-outline' },
@@ -322,10 +323,27 @@ export default function SettingsScreen() {
             subtitle="存了什么、什么时候联网"
             onPress={() => router.push('/privacy')}
           />
+          <View style={{ height: 1, backgroundColor: t.border }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
+            <Ionicons name="cloud-download-outline" size={20} color={t.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, color: t.text, fontWeight: '500' }}>自动检查更新</Text>
+              <Text style={{ fontSize: 12, color: t.textTertiary, marginTop: 2 }}>
+                {settings.autoUpdateCheck === false
+                  ? '已关闭：只有你手动点「检查更新」时才联网'
+                  : '每 12 小时最多一次，只取一个版本号文件，不带任何标识'}
+              </Text>
+            </View>
+            <Switch
+              value={settings.autoUpdateCheck !== false}
+              onValueChange={(v) => actions.updateSettings({ autoUpdateCheck: v })}
+              trackColor={{ true: t.primary, false: t.border }}
+            />
+          </View>
         </Card>
 
         <Text style={{ textAlign: 'center', fontSize: 11, color: t.textTertiary, marginTop: spacing.xl }}>
-          v0.1.0 · 数据保存在本机
+          v{APP_VERSION} · 数据保存在本机
         </Text>
       </ScrollView>
     </View>

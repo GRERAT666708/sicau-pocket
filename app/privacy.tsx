@@ -19,6 +19,7 @@ const ONLINE = [
   ['教务系统', 'jiaowu.sicau.edu.cn', '导入课表 / 成绩、抓教室课表（公开页面）'],
   ['校园 VPN', 'webvpn.sicau.edu.cn', '校外访问教务时由它在中间转发'],
   ['一卡通服务', 'yktwechat.sicau.edu.cn', '余额、流水、电费充值（学校官方 H5）'],
+  ['版本检查（本项目的静态站）', 'sicau-pocket.com', '取一份 version.json 判断有没有新版本；请求里不带设备信息、不带账号，失败也不影响任何功能'],
 ];
 
 export default function PrivacyScreen() {
@@ -67,7 +68,8 @@ export default function PrivacyScreen() {
             </View>
           ))}
           <Text style={{ fontSize: 11.5, color: t.textTertiary, lineHeight: 18 }}>
-            请求都是直连上述学校域名，不经过我们自己的任何中转服务器。
+            前三条是学校自己的系统，直连；最后一条是本项目的纯静态站点，只用来提示新版本。
+            不想让它自动联网，可以在「设置 → 自动检查更新」关掉，之后只有你手动点「检查更新」才会请求。
           </Text>
         </Card>
       </View>

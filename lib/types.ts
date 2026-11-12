@@ -55,6 +55,8 @@ export type AppSettings = {
   campusSource?: 'major' | 'timetable' | 'manual';
   /** 学生姓名（从教务页面里认出来的，或手动填） */
   userName?: string;
+  /** 是否允许 App 静默检查更新（默认允许；关掉后只在你手动点「检查更新」时联网） */
+  autoUpdateCheck?: boolean;
 };
 
 export type Campus = '雅安' | '成都' | '都江堰';
