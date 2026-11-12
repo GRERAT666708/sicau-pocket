@@ -32,10 +32,10 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
 
   companion object {
     const val ACTION_REFRESH = "__PKG__.WIDGET_REFRESH"
-    private val ROW_NAMES = intArrayOf(R.id.widget_name1, R.id.widget_name2, R.id.widget_name3)
-    private val ROW_DETAILS = intArrayOf(R.id.widget_detail1, R.id.widget_detail2, R.id.widget_detail3)
-    private val ROW_BARS = intArrayOf(R.id.widget_bar1, R.id.widget_bar2, R.id.widget_bar3)
-    private val ROWS = intArrayOf(R.id.widget_row1, R.id.widget_row2, R.id.widget_row3)
+    private val ROW_NAMES = intArrayOf(R.id.widget_name1, R.id.widget_name2, R.id.widget_name3, R.id.widget_name4, R.id.widget_name5, R.id.widget_name6)
+    private val ROW_DETAILS = intArrayOf(R.id.widget_detail1, R.id.widget_detail2, R.id.widget_detail3, R.id.widget_detail4, R.id.widget_detail5, R.id.widget_detail6)
+    private val ROW_BARS = intArrayOf(R.id.widget_bar1, R.id.widget_bar2, R.id.widget_bar3, R.id.widget_bar4, R.id.widget_bar5, R.id.widget_bar6)
+    private val ROWS = intArrayOf(R.id.widget_row1, R.id.widget_row2, R.id.widget_row3, R.id.widget_row4, R.id.widget_row5, R.id.widget_row6)
   }
 
   override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
@@ -75,8 +75,7 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
       views.setTextViewText(R.id.widget_date, "川农口袋")
       views.setTextViewText(ROW_NAMES[0], "打开 App 同步一次课表")
       views.setTextViewText(ROW_DETAILS[0], "之后这里显示今天的课")
-      views.setViewVisibility(ROWS[1], View.GONE)
-      views.setViewVisibility(ROWS[2], View.GONE)
+      for (i in 1..5) views.setViewVisibility(ROWS[i], View.GONE)
       views.setTextViewText(R.id.widget_more, "")
       return views
     }
@@ -88,7 +87,7 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
 
       val courses = json.optJSONArray("courses")
       val count = if (courses == null) 0 else courses.length()
-      for (i in 0..2) {
+      for (i in 0..5) {
         if (i >= count) {
           views.setViewVisibility(ROWS[i], View.GONE)
         } else {
@@ -112,7 +111,7 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
       }
 
       val more = json.optInt("more", 0)
-      views.setTextViewText(R.id.widget_more, if (more > 0) "其他 " + more + " 个日程" else "")
+      views.setTextViewText(R.id.widget_more, if (more > 0) "还有 " + more + " 门" else "")
       views
     } catch (e: Exception) {
       views.setTextViewText(R.id.widget_date, "川农口袋")
@@ -452,6 +451,135 @@ const LAYOUT = `<?xml version="1.0" encoding="utf-8"?>
         android:ellipsize="end"
         android:maxLines="1"
         android:text="14:20-16:00  4-B203"
+        android:textColor="#7C8B80"
+        android:textSize="11sp" />
+    </LinearLayout>
+  </LinearLayout>
+
+  <LinearLayout
+    android:id="@+id/widget_row4"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="6dp"
+    android:orientation="horizontal">
+
+    <TextView
+      android:id="@+id/widget_bar4"
+      android:layout_width="3dp"
+      android:layout_height="30dp"
+      android:background="#1F6F4A" />
+
+    <LinearLayout
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:layout_marginLeft="9dp"
+      android:orientation="vertical">
+
+      <TextView
+        android:id="@+id/widget_name4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="高等数学"
+        android:textColor="#1F6F4A"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+      <TextView
+        android:id="@+id/widget_detail4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="08:10-09:50  4-A306"
+        android:textColor="#7C8B80"
+        android:textSize="11sp" />
+    </LinearLayout>
+  </LinearLayout>
+
+  <LinearLayout
+    android:id="@+id/widget_row5"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="6dp"
+    android:orientation="horizontal">
+
+    <TextView
+      android:id="@+id/widget_bar5"
+      android:layout_width="3dp"
+      android:layout_height="30dp"
+      android:background="#5B4B8A" />
+
+    <LinearLayout
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:layout_marginLeft="9dp"
+      android:orientation="vertical">
+
+      <TextView
+        android:id="@+id/widget_name5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="高等数学"
+        android:textColor="#5B4B8A"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+      <TextView
+        android:id="@+id/widget_detail5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="08:10-09:50  4-A306"
+        android:textColor="#7C8B80"
+        android:textSize="11sp" />
+    </LinearLayout>
+  </LinearLayout>
+
+  <LinearLayout
+    android:id="@+id/widget_row6"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="6dp"
+    android:orientation="horizontal">
+
+    <TextView
+      android:id="@+id/widget_bar6"
+      android:layout_width="3dp"
+      android:layout_height="30dp"
+      android:background="#7A4A1E" />
+
+    <LinearLayout
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:layout_marginLeft="9dp"
+      android:orientation="vertical">
+
+      <TextView
+        android:id="@+id/widget_name6"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="高等数学"
+        android:textColor="#7A4A1E"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+      <TextView
+        android:id="@+id/widget_detail6"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="08:10-09:50  4-A306"
         android:textColor="#7C8B80"
         android:textSize="11sp" />
     </LinearLayout>

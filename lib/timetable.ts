@@ -30,7 +30,8 @@ export type ParsedCourse = {
   teacher?: string;
   room?: string;
   booking?: boolean;
-  slots: { day: number; start: number; end: number; weeks: number[] }[];
+  /** 同一门课不同星期/节次可能在不同教室，所以每个时段各存一份 */
+  slots: { day: number; start: number; end: number; weeks: number[]; room?: string }[];
 };
 
 const DAY_KEYS = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日'];
@@ -344,7 +345,13 @@ export function groupParsedSlots(slots: ParsedSlot[]): ParsedCourse[] {
   for (const slot of slots) {
     const key = `${slot.name}|${slot.teacher ?? ''}`;
     const existing = map.get(key);
-    const item = { day: slot.day, start: slot.start, end: slot.end, weeks: slot.weeks };
+    const item = {
+      day: slot.day,
+      start: slot.start,
+      end: slot.end,
+      weeks: slot.weeks,
+      room: slot.room,
+    };
     if (existing) {
       existing.slots.push(item);
       existing.room ??= slot.room;
@@ -371,7 +378,8 @@ export function toCourses(parsed: ParsedCourse[], makeId: (index: number) => str
       start: s.start,
       end: s.end,
       weeks: s.weeks.length ? s.weeks : Array.from({ length: 16 }, (_, i) => i + 1),
-      room: p.room,
+      // 优先用这个时段自己的教室；没有才回落到整门课的教室
+      room: s.room ?? p.room,
     }));
     return {
       id: makeId(index),
@@ -420,7 +428,7 @@ export function parseTimetableAny(html: string): ParsedSlot[] {
     course.slots.map((slot) => ({
       name: course.name,
       teacher: course.teacher,
-      room: course.room,
+      room: slot.room ?? course.room,
       day: slot.day,
       start: slot.start,
       end: slot.end,

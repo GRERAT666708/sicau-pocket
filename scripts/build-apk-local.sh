@@ -11,6 +11,7 @@
 #
 # 产物：android/app/build/outputs/apk/release/app-release.apk → 复制成 sicau-pocket.apk
 set -euo pipefail
+export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
 # lib/version.ts 要和 app.json 同步，否则「检查更新」会一直提示
 APP_VER="$(grep -o '"version": *"[^"]*"' app.json | head -1 | sed -E 's/.*"([^"]+)"$/\1/')"
@@ -18,7 +19,7 @@ APP_CODE="$(grep -o '"versionCode": *[0-9]*' app.json | head -1 | grep -o '[0-9]
 TS_VER="$(grep -o "APP_VERSION = '[^']*'" lib/version.ts | sed -E "s/.*'([^']+)'/\1/")"
 TS_CODE="$(grep -o 'APP_BUILD = [0-9]*' lib/version.ts | grep -o '[0-9]*')"
 if [ "$APP_VER" != "$TS_VER" ] || [ "$APP_CODE" != "$TS_CODE" ]; then
-  echo "✗ lib/version.ts 与 app.json 版本不一致（app.json: $APP_VER/$APP_CODE，version.ts: $TS_VER/$TS_CODE）"
+  echo "✗ lib/version.ts 与 app.json 版本不一致：app.json = ${APP_VER}/${APP_CODE}, version.ts = ${TS_VER}/${TS_CODE}"
   exit 1
 fi
 

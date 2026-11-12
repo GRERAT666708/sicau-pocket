@@ -77,6 +77,35 @@ export default function ImportScreen() {
           />
         </Card>
 
+        <SectionTitle title="更省事：截图导入" />
+        <Card style={{ gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 12,
+                backgroundColor: t.primarySoft,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="image-outline" size={19} color={t.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: t.text }}>用课表截图导入</Text>
+              <Text style={{ fontSize: 12, color: t.textSecondary, marginTop: 2 }}>
+                不用登录：把教务网整周课表截一张图，本机识别后生成课表
+              </Text>
+            </View>
+            <Badge text="新" tone="warn" />
+          </View>
+          <Text style={{ fontSize: 12.5, color: t.textTertiary, lineHeight: 19 }}>
+            识别全在手机本地完成，图片不上传。识别完先给你一份清单，核对无误再覆盖本机课表。
+          </Text>
+          <PrimaryButton label="选一张课表截图" icon="image-outline" onPress={() => router.push('/import-image')} />
+        </Card>
+
         <SectionTitle title="大概四步" />
         <Card style={{ gap: 12 }}>
           {STEPS.map((text, i) => (

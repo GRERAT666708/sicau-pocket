@@ -30,7 +30,7 @@ export type WidgetPayload = {
   /** 「周日 11月8日」这种日期标签，小组件顶部用 */
   dateLabel: string;
   courses: WidgetCourse[];
-  /** 除前三节外还剩几节，显示「其他 N 个日程」 */
+  /** 超过小组件 6 行的部分，显示「还有 N 门」 */
   more: number;
   /** 小尺寸小组件用：正在上 / 下一节课 */
   highlight?: WidgetHighlight;
@@ -54,7 +54,7 @@ export function buildWidgetPayload(): WidgetPayload {
   const colorOf = (course: { colorIndex: number }) =>
     coursePalette[Math.abs(course.colorIndex) % coursePalette.length].fg;
 
-  const courses: WidgetCourse[] = entries.slice(0, 3).map((e) => ({
+  const courses: WidgetCourse[] = entries.map((e) => ({
     time: `${fmtHM(periodStart(e.slot.start))}-${fmtHM(periodEnd(e.slot.end))}`,
     name: e.course.name,
     room: e.slot.room ?? e.course.room ?? '',
@@ -93,7 +93,7 @@ export function buildWidgetPayload(): WidgetPayload {
     day,
     dateLabel: `${day} ${now.getMonth() + 1}月${now.getDate()}日`,
     courses,
-    more: Math.max(0, entries.length - 3),
+    more: Math.max(0, entries.length - 6),
     highlight,
     emptyText,
     updatedAt: `${pad2(now.getHours())}:${pad2(now.getMinutes())}`,
