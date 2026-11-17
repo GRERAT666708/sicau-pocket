@@ -37,7 +37,14 @@ mkdir -p "$DIR"
 rsync -a --delete --exclude='/apk/' "$SRC/site/" "$DIR/"
 
 echo "== 3/5 安装 nginx 配置 =="
-sed -e "s/sicau-pocket\.com/${DOMAIN}/g" "$DIR/deploy/nginx-sicau-pocket.conf" > "$CONF"
+# 一旦 certbot 把 443/证书/301 写进 $CONF，就绝不能再被模板覆盖，
+# 否则每次部署都会把 HTTPS 和 http→https 跳转冲掉。
+if [[ -s "$CONF" ]] && grep -q "ssl_certificate" "$CONF"; then
+  echo "  · $CONF 已含 HTTPS 配置，保留不覆盖"
+else
+  sed -e "s/sicau-pocket\.com/${DOMAIN}/g" "$DIR/deploy/nginx-sicau-pocket.conf" > "$CONF"
+  echo "  · 写入基础 HTTP 配置（还没签证书）"
+fi
 ln -sf "$CONF" "/etc/nginx/sites-enabled/${DOMAIN}"
 [[ -e /etc/nginx/sites-enabled/default ]] && rm -f /etc/nginx/sites-enabled/default || true
 

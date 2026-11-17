@@ -56,7 +56,11 @@ find "\$DIR" -type f -exec chmod 644 {} \;
 
 if [ -n "\$DOMAIN" ] && [ -f /root/nginx-sicau-pocket.conf ]; then
   CONF="/etc/nginx/sites-available/\$DOMAIN"
-  sed -e "s/sicau-pocket\.com/\$DOMAIN/g" /root/nginx-sicau-pocket.conf > "\$CONF"
+  if [ -s "\$CONF" ] && grep -q "ssl_certificate" "\$CONF"; then
+    echo "  · \$CONF 已含 HTTPS 配置，保留不覆盖"
+  else
+    sed -e "s/sicau-pocket\.com/\$DOMAIN/g" /root/nginx-sicau-pocket.conf > "\$CONF"
+  fi
   ln -sf "\$CONF" "/etc/nginx/sites-enabled/\$DOMAIN"
   [ -e /etc/nginx/sites-enabled/default ] && rm -f /etc/nginx/sites-enabled/default || true
   echo "  · 已写入 \$CONF"
