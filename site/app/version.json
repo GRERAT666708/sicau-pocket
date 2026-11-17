@@ -1,15 +1,16 @@
 {
-  "version": "0.10.18",
-  "versionCode": 28,
-  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-latest.apk",
+  "version": "0.10.19",
+  "versionCode": 29,
+  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.19.apk",
   "fallbackUrl": "https://sicau-pocket.com/download.html",
-  "size": 49075195,
-  "sha256": "bf501c88fcbaa6c00444b45bd0f285bee9149eb9ae14eebd89e28c223c41f832",
-  "releasedAt": "2026-11-12",
-  "minimumVersionCode": 1,
+  "size": 48684695,
+  "sha256": "aae15e5b7c0025eb81a7c55b2aedf0dce1c13378335116ae706b8af4f450dac5",
+  "releasedAt": "2026-11-17",
+  "minimumVersionCode": 27,
   "notes": [
-    "隐私说明补上「版本检查」：只取一个 version.json，不带任何标识",
-    "新增「设置 → 自动检查更新」开关，关掉后只有手动点才会联网",
-    "课表截图导入 / 同课不同教室 / 小组件最多 6 门（同 v0.10.17）"
+    "应用内更新：点「更新」直接下载 APK，下完自动弹出系统安装器，不用再去浏览器找文件",
+    "页面与小组件水印换成金牛（去掉原校徽图形）",
+    "「关于」页新增备案号，可点击到工信部备案系统核验",
+    "课表截图导入：修「科技园」前缀、周次被「连堂学时」污染、老师丢失等问题"
   ]
 }

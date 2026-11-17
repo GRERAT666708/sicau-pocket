@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge, Card, GhostButton, ListRow, SectionTitle } from '@/components/UIKit';
 import { spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { APP_VERSION } from '@/lib/version';
+import { downloadApk, installApk, supportsInAppInstall } from '@/lib/apkUpdate';
 import { formatSize, useUpdate } from '@/lib/update';
 
 const FEATURES: { icon: keyof typeof Ionicons.glyphMap; title: string; desc: string }[] = [
@@ -18,6 +19,29 @@ const FEATURES: { icon: keyof typeof Ionicons.glyphMap; title: string; desc: str
 
 export default function AboutScreen() {
   const update = useUpdate(false);
+  const [progress, setProgress] = useState<number | null>(null);
+  const [downloading, setDownloading] = useState(false);
+
+  const startUpdate = useCallback(async () => {
+    const url = update.manifest?.apkUrl;
+    if (!url || downloading) return;
+    if (!supportsInAppInstall) {
+      void Linking.openURL(url).catch(() => {});
+      return;
+    }
+    setDownloading(true);
+    setProgress(0);
+    const file = await downloadApk(url, (v) => setProgress(v));
+    setDownloading(false);
+    if (!file) {
+      setProgress(null);
+      void Linking.openURL(url).catch(() => {});
+      return;
+    }
+    const ok = await installApk(file);
+    setProgress(null);
+    if (!ok) void Linking.openURL(url).catch(() => {});
+  }, [downloading, update.manifest]);
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -112,21 +136,23 @@ export default function AboutScreen() {
           <Card style={{ paddingVertical: 2, paddingHorizontal: 16 }}>
             <ListRow
               icon="cloud-download-outline"
-              title={update.checking ? '正在检查更新…' : '检查更新'}
+              title={update.checking ? '正在检查更新…' : downloading ? '正在下载更新' : '检查更新'}
               subtitle={
                 update.checking
                   ? `当前 v${APP_VERSION}，正在检查…`
-                  : update.hasUpdate && update.manifest
-                    ? `发现 v${update.manifest.version}${formatSize(update.manifest.size) ? ` · ${formatSize(update.manifest.size)}` : ''}，点这里下载`
-                    : update.checked && update.manifest
-                      ? `当前 v${APP_VERSION}，已是最新`
-                      : update.checked
-                        ? `当前 v${APP_VERSION}，检查失败（可能没联网），点这里重试`
-                        : `当前 v${APP_VERSION}`
+                  : downloading
+                    ? `正在下载 ${progress ?? 0}%，下载完会自动弹出安装`
+                    : update.hasUpdate && update.manifest
+                      ? `发现 v${update.manifest.version}${formatSize(update.manifest.size) ? ` · ${formatSize(update.manifest.size)}` : ''}${supportsInAppInstall ? '，点这里下载并安装' : '，点这里下载'}`
+                      : update.checked && update.manifest
+                        ? `当前 v${APP_VERSION}，已是最新`
+                        : update.checked
+                          ? `当前 v${APP_VERSION}，检查失败（可能没联网），点这里重试`
+                          : `当前 v${APP_VERSION}`
               }
               onPress={() => {
                 if (update.hasUpdate && update.manifest) {
-                  void Linking.openURL(update.manifest.apkUrl).catch(() => {});
+                  void startUpdate();
                 } else {
                   void update.check(true);
                 }
@@ -143,6 +169,18 @@ export default function AboutScreen() {
                 />
               </>
             ) : null}
+          </Card>
+        </View>
+
+        <View style={{ marginTop: spacing.xl }}>
+          <SectionTitle title="备案" />
+          <Card style={{ paddingVertical: 2, paddingHorizontal: 16 }}>
+            <ListRow
+              icon="document-text-outline"
+              title="蜀ICP备2026071533号-1"
+              subtitle="网站备案 · 点这里到工信部备案系统核验"
+              onPress={() => Linking.openURL('https://beian.miit.gov.cn/').catch(() => {})}
+            />
           </Card>
         </View>
 

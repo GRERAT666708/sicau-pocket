@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge, Card, ListRow, SectionTitle } from '@/components/UIKit';
 import { radius, spacing } from '@/constants/theme';
 import { currentWeek, useAppState } from '@/lib/store';
 import { APP_VERSION } from '@/lib/version';
+import { downloadApk, installApk, supportsInAppInstall } from '@/lib/apkUpdate';
 import { formatSize, useUpdate } from '@/lib/update';
 import { effectiveCampus } from '@/lib/campusState';
 import { useTheme } from '@/hooks/useTheme';
@@ -45,6 +46,32 @@ export default function MeScreen() {
 
   const update = useUpdate(settings.autoUpdateCheck !== false);
   const showUpdate = update.hasUpdate && !update.ignored && !!update.manifest;
+  const [progress, setProgress] = useState<number | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const cancelRef = useRef({ cancelled: false });
+
+  const startUpdate = async () => {
+    const url = update.manifest?.apkUrl;
+    if (!url || downloading) return;
+    // iOS / 不支持应用内安装时，退回浏览器下载
+    if (!supportsInAppInstall) {
+      void Linking.openURL(url).catch(() => {});
+      return;
+    }
+    setDownloading(true);
+    setProgress(0);
+    cancelRef.current = { cancelled: false };
+    const file = await downloadApk(url, (p) => setProgress(p), cancelRef.current);
+    setDownloading(false);
+    if (!file) {
+      setProgress(null);
+      void Linking.openURL(url).catch(() => {});
+      return;
+    }
+    const ok = await installApk(file);
+    setProgress(null);
+    if (!ok) void Linking.openURL(url).catch(() => {});
+  };
 
   const campus = effectiveCampus(settings);
   const name = settings.major || user?.name || '未设置专业';
@@ -60,10 +87,7 @@ export default function MeScreen() {
 
       {showUpdate ? (
         <GlassPressable
-          onPress={() => {
-            const url = update.manifest?.apkUrl;
-            if (url) void Linking.openURL(url);
-          }}
+          onPress={() => void startUpdate()}
           radiusValue={radius.md}
           intensity={18}
           style={{ marginTop: spacing.md }}
@@ -90,10 +114,16 @@ export default function MeScreen() {
               <Text style={{ fontSize: 10.5, color: t.textTertiary, marginTop: 2 }} numberOfLines={1}>
                 当前 v{APP_VERSION}
                 {formatSize(update.manifest?.size) ? ` · ${formatSize(update.manifest?.size)}` : ''}
-                {' · 点这里下载安装包'}
+                {downloading
+                  ? ` · 下载中 ${progress ?? 0}%`
+                  : supportsInAppInstall
+                    ? ' · 点这里下载并安装'
+                    : ' · 点这里下载安装包'}
               </Text>
             </View>
-            <Text style={{ fontSize: 11.5, fontWeight: '700', color: t.primary }}>更新</Text>
+            <Text style={{ fontSize: 11.5, fontWeight: '700', color: t.primary }}>
+              {downloading ? `${progress ?? 0}%` : '更新'}
+            </Text>
           </View>
         </GlassPressable>
       ) : null}
