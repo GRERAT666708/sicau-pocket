@@ -46,6 +46,15 @@ else
   echo "  · 写入基础 HTTP 配置（还没签证书）"
 fi
 ln -sf "$CONF" "/etc/nginx/sites-enabled/${DOMAIN}"
+# 已签证书时，额外装一个「80 → 443」跳转块（文件名 00- 保证优先匹配）
+REDIRECT_CONF="/etc/nginx/sites-available/00-https-redirect"
+if [[ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]]; then
+  sed -e "s/sicau-pocket\.com/${DOMAIN}/g" "$DIR/deploy/00-https-redirect.conf" > "$REDIRECT_CONF"
+  ln -sf "$REDIRECT_CONF" "/etc/nginx/sites-enabled/00-https-redirect"
+  echo "  · 已安装 http→https 跳转"
+else
+  echo "  · 还没签证书，跳过 http→https 跳转（签完再跑一次本脚本即可）"
+fi
 [[ -e /etc/nginx/sites-enabled/default ]] && rm -f /etc/nginx/sites-enabled/default || true
 
 chown -R www-data:www-data "$DIR"
