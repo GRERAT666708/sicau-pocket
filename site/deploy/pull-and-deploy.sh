@@ -73,8 +73,10 @@ if [[ "${SKIP_APK:-0}" == "1" ]]; then
   echo "  · SKIP_APK=1，跳过"
 elif [[ -z "$VERSION" ]]; then
   echo "  ! 读不到 version.json 里的版本号，跳过 APK"
-elif [[ -s "$APK" ]] && [[ "$(stat -c%s "$APK")" -gt 5000000 ]]; then
-  echo "  · 已有 $(du -h "$APK" | cut -f1) 的安装包，跳过（要重下先删 $APK）"
+elif [[ -s "$APK" ]] && [[ "$(stat -c%s "$APK")" -gt 5000000 ]] \
+     && [[ -f "$DIR/apk/.apk-version" ]] && [[ "$(cat "$DIR/apk/.apk-version")" == "$VERSION" ]]; then
+  echo "  · 已有 v$VERSION 的安装包（$(du -h "$APK" | cut -f1)），跳过"
+  cp -f "$APK" "$DIR/apk/sicau-pocket-${VERSION}.apk"
 else
   mkdir -p "$DIR/apk"
   ASSET="https://github.com/${REPO}/releases/download/v${VERSION}/sicau-pocket-v${VERSION}-arm64.apk"
@@ -93,6 +95,7 @@ else
       fi
       mv "$APK.part" "$APK"
       cp "$APK" "$DIR/apk/sicau-pocket-${VERSION}.apk"
+      printf '%s' "$VERSION" > "$DIR/apk/.apk-version"
       ok=1
       break
     fi
