@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { AppState, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { GuideCard } from '@/components/GuideCard';
 import { Badge, Card, Chip, GhostButton, PrimaryButton, SectionTitle } from '@/components/UIKit';
 import { radius, spacing } from '@/constants/theme';
 import { CAMPUS_BUILDINGS, demoEcard, demoElectricity } from '@/lib/campus';
@@ -83,6 +84,18 @@ export default function CampusScreen() {
         contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 60, paddingTop: 6 }}
         showsVerticalScrollIndicator={false}
       >
+        {kind === 'classroom' ? (
+          <GuideCard
+            id="classroom"
+            icon="school-outline"
+            title="空教室怎么看"
+            points={[
+              '先同步一次教室总表（教务公开页面，不用登录），之后按楼看',
+              '白色「空闲」是整段时间都没课，灰色是这间有课、数字是当天节数',
+              '缓存 7 天，过期会在顶部提示重新同步',
+            ]}
+          />
+        ) : null}
         {kind === 'electricity' ? <Electricity /> : null}
         {kind === 'ecard' ? <Ecard /> : null}
         {kind === 'classroom' ? <Classroom /> : null}

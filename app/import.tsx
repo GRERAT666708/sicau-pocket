@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, Text, View, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GuideCard } from '@/components/GuideCard';
 import { Badge, Card, PrimaryButton, SectionTitle } from '@/components/UIKit';
 import { radius, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
@@ -42,6 +43,15 @@ export default function ImportScreen() {
         contentContainerStyle={{ padding: spacing.lg, paddingBottom: 80 }}
         showsVerticalScrollIndicator={false}
       >
+        <GuideCard
+          id="import"
+          icon="cloud-download-outline"
+          title="两种导入方式，挑一种"
+          points={[
+            '推荐：在 App 里打开教务网登录，进到课表页点底部「导入这个页面」',
+            '不想登录就用「截图导入」：截一张整周课表，本机识别，图片不上传',
+          ]}
+        />
         <Card style={{ gap: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View

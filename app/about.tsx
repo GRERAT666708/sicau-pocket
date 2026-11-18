@@ -21,6 +21,7 @@ export default function AboutScreen() {
   const update = useUpdate(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const startUpdate = useCallback(async () => {
     const url = update.manifest?.apkUrl;
@@ -31,15 +32,18 @@ export default function AboutScreen() {
     }
     setDownloading(true);
     setProgress(0);
-    const file = await downloadApk(url, (v) => setProgress(v));
+    setNotice(null);
+    const res = await downloadApk(url, (v) => setProgress(v), undefined, update.manifest?.md5);
     setDownloading(false);
-    if (!file) {
-      setProgress(null);
+    setProgress(null);
+    if (!res.ok) {
+      if (res.reason === 'checksum') {
+        setNotice('安装包校验没通过（可能下载不完整），已改用浏览器下载。');
+      }
       void Linking.openURL(url).catch(() => {});
       return;
     }
-    const ok = await installApk(file);
-    setProgress(null);
+    const ok = await installApk(res.uri);
     if (!ok) void Linking.openURL(url).catch(() => {});
   }, [downloading, update.manifest]);
   const t = useTheme();
@@ -158,6 +162,9 @@ export default function AboutScreen() {
                 }
               }}
             />
+            {notice ? (
+              <Text style={{ fontSize: 11.5, color: '#B4532A', marginTop: 8, lineHeight: 17 }}>{notice}</Text>
+            ) : null}
             {update.hasUpdate && update.manifest ? (
               <>
                 <View style={{ height: 1, backgroundColor: t.border }} />

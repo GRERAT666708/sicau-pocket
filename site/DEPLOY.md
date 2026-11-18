@@ -199,15 +199,17 @@ App 启动会拉 `https://sicau-pocket.com/app/version.json`（另有 jsdelivr /
 比较 `versionCode` 后决定是否在「我的」页顶部提示更新。
 
 ```bash
-# 1) 改版本号：app.json 的 expo.version / expo.android.versionCode，以及 lib/version.ts 的 APP_VERSION / APP_BUILD
-bash scripts/build-apk-local.sh --arm64          # 脚本会校验两处版本号一致
+# 1) 改版本号（一条命令同步 app.json / lib/version.ts / 站点文案）
+node scripts/bump-version.mjs patch              # 或 minor / X.Y.Z；--code N 指定 versionCode
+bash scripts/build-apk-local.sh --arm64          # 每次都会清旧 bundle 与 Metro 缓存，再校验两处版本号一致
 
 # 2) 拷安装包（latest 给下载页，带版本号的给 version.json 里的 apkUrl）
 cp ../sicau-pocket-vX.Y.Z-arm64.apk site/apk/sicau-pocket-latest.apk
 cp ../sicau-pocket-vX.Y.Z-arm64.apk site/apk/sicau-pocket-X.Y.Z.apk
 
-# 3) 生成版本清单（自动读 app.json、算 sha256 与体积）
-node scripts/gen-version-json.mjs ../sicau-pocket-vX.Y.Z-arm64.apk --notes notes.txt
+# 3) 生成版本清单（自动读 app.json、算 sha256 + md5 与体积）
+#    客户端会用 md5 校验下载到的安装包，对不上就删掉并回退浏览器下载
+node scripts/gen-version-json.mjs ../sicau-pocket-vX.Y.Z-arm64.apk --notes notes.txt --min <上一版 versionCode>
 
 # 4) 部署
 ossutil sync ./site/ oss://sicau-pocket-site/ --delete

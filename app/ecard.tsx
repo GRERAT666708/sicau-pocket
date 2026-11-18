@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RNWebView from 'react-native-webview';
 
+import { GuideCard } from '@/components/GuideCard';
 import { Badge, Card, GhostButton, PrimaryButton, SectionTitle } from '@/components/UIKit';
 import { useTheme } from '@/hooks/useTheme';
 import { actions } from '@/lib/store';
@@ -303,6 +304,16 @@ export default function EcardScreen() {
       >
         {header}
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 120 }}>
+          <GuideCard
+            id="ecard"
+            icon="card-outline"
+            title="一共绑一次，之后都能用"
+            points={[
+              '学校的「一卡通服务」只在微信里打开，链接里带着你的身份标识（openid）',
+              '按下面三步把链接复制过来，只存在这台手机上，不上传、不写日志',
+              '绑好后能看余额和流水，还能直接给宿舍电费充值',
+            ]}
+          />
           <Card>
             <SectionTitle title="先把微信里的链接粘进来" />
             <Text style={{ fontSize: 12.5, color: t.textSecondary, lineHeight: 20 }}>

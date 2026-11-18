@@ -10,7 +10,10 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "export:web": "expo export --platform web"
+    "export:web": "expo export --platform web",
+    "bump": "node scripts/bump-version.mjs",
+    "manifest": "node scripts/gen-version-json.mjs sicau-pocket.apk",
+    "build:apk": "bash scripts/build-apk-local.sh --arm64"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

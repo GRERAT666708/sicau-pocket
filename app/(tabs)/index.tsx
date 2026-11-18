@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppBackground } from '@/components/AppBackground';
 import { GlassPressable } from '@/components/Glass';
 import { Badge, Card, SectionTitle } from '@/components/UIKit';
+import { GuideCard } from '@/components/GuideCard';
 import { courseColors, radius, spacing } from '@/constants/theme';
 import { formatCN, greeting, dayIndex, nowMinutes, weekdayCN, fmtHM } from '@/lib/date';
 import { periodEnd, periodStart, periodRangeText } from '@/lib/periods';
@@ -116,6 +117,16 @@ export default function TodayScreen() {
         contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 130 }}
         showsVerticalScrollIndicator={false}
       >
+        <GuideCard
+          id="today"
+          icon="sunny-outline"
+          title="今天这一页能干什么"
+          points={[
+            '上面那张卡是「现在在干什么」：正在上课会显示进度条和还剩几分钟',
+            '没课时段会提示下一节课还有多久，点「课间专注一会儿」能顺手记一段',
+            '课表不准就去「课表 → 导入」，第一次用建议先导入自己的教务课表',
+          ]}
+        />
         <Card style={{ padding: 18 }}>
           {status.kind === 'class' ? (
             <>

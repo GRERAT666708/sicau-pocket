@@ -24,9 +24,11 @@ if [ "$APP_VER" != "$TS_VER" ] || [ "$APP_CODE" != "$TS_CODE" ]; then
 fi
 
 ABI="all"
+KEEP_BUNDLE=0
 for arg in "$@"; do
   case "$arg" in
     --arm64) ABI="arm64" ;;
+    --keep-bundle) KEEP_BUNDLE=1 ;;
   esac
 done
 
@@ -192,6 +194,16 @@ for d, s in dens.items():
     bg.resize((A,A), Image.LANCZOS).save(f'{p}/ic_launcher_background.webp','WEBP',quality=92)
     mono.resize((A,A), Image.LANCZOS).save(f'{p}/ic_launcher_monochrome.webp','WEBP',quality=92)
 PYEOF
+fi
+
+# 每次构建都清掉旧的 JS bundle 与 Metro 缓存。
+# Gradle 的 createBundleReleaseJsAndAssets 是 UP-TO-DATE 的，不清它就不会重新打包，
+# 结果就是改了 EXPO_PUBLIC_* 之后装上去还是旧值（踩过一次）。
+if [[ "$KEEP_BUNDLE" != "1" ]]; then
+  echo "→ 清理旧的 JS bundle 与 Metro 缓存（保证 EXPO_PUBLIC_* 生效）"
+  rm -f android/app/build/generated/assets/react/release/index.android.bundle
+  rm -f android/app/build/intermediates/assets/release/mergeReleaseAssets/index.android.bundle
+  rm -rf "${TMPDIR:-/tmp}/metro-cache" "${TMPDIR:-/tmp}"/metro-file-map-*
 fi
 
 gradle :app:assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a

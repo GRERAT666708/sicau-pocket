@@ -8,6 +8,7 @@ import { Badge, Card, ListRow, SectionTitle } from '@/components/UIKit';
 import { radius, spacing } from '@/constants/theme';
 import { currentWeek, useAppState } from '@/lib/store';
 import { APP_VERSION } from '@/lib/version';
+import { GuideCard } from '@/components/GuideCard';
 import { downloadApk, installApk, supportsInAppInstall } from '@/lib/apkUpdate';
 import { formatSize, useUpdate } from '@/lib/update';
 import { effectiveCampus } from '@/lib/campusState';
@@ -48,6 +49,7 @@ export default function MeScreen() {
   const showUpdate = update.hasUpdate && !update.ignored && !!update.manifest;
   const [progress, setProgress] = useState<number | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const cancelRef = useRef({ cancelled: false });
 
   const startUpdate = async () => {
@@ -60,16 +62,19 @@ export default function MeScreen() {
     }
     setDownloading(true);
     setProgress(0);
+    setNotice(null);
     cancelRef.current = { cancelled: false };
-    const file = await downloadApk(url, (p) => setProgress(p), cancelRef.current);
+    const res = await downloadApk(url, (p) => setProgress(p), cancelRef.current, update.manifest?.md5);
     setDownloading(false);
-    if (!file) {
-      setProgress(null);
+    setProgress(null);
+    if (!res.ok) {
+      if (res.reason === 'checksum') {
+        setNotice('安装包校验没通过（可能下载不完整），已改用浏览器下载。');
+      }
       void Linking.openURL(url).catch(() => {});
       return;
     }
-    const ok = await installApk(file);
-    setProgress(null);
+    const ok = await installApk(res.uri);
     if (!ok) void Linking.openURL(url).catch(() => {});
   };
 
@@ -127,6 +132,21 @@ export default function MeScreen() {
           </View>
         </GlassPressable>
       ) : null}
+
+      {notice ? (
+        <Text style={{ fontSize: 11.5, color: '#B4532A', marginTop: 6, lineHeight: 17 }}>{notice}</Text>
+      ) : null}
+
+      <GuideCard
+        id="me"
+        icon="person-outline"
+        title="这里能改的东西"
+        points={[
+          '上面是专业和校区，点右上角「设置」可以改（校区决定空闲教室的范围）',
+          '四个入口：电费·一卡通、空闲教室、成绩查询、校历',
+          '有新版时顶部会出现更新横幅，点一下直接下载并安装',
+        ]}
+      />
 
       <LinearGradient
         colors={[t.primary, t.primaryDark]}

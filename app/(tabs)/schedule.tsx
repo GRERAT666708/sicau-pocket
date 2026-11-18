@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppBackground } from '@/components/AppBackground';
+import { GuideCard } from '@/components/GuideCard';
 import { Card, PrimaryButton } from '@/components/UIKit';
 import { courseColors, radius, spacing } from '@/constants/theme';
 import { dayIndex, formatMD, isoDate, weekDates } from '@/lib/date';
@@ -160,6 +161,16 @@ export default function ScheduleScreen() {
         contentContainerStyle={{ paddingBottom: 130 }}
         showsVerticalScrollIndicator={false}
       >
+        <GuideCard
+          id="schedule"
+          icon="calendar-outline"
+          title="看课表前先知道三件事"
+          points={[
+            '一屏一周，顶部「第 N 周」可以来回翻，右边「回到本周」随时跳回',
+            '单双周的课只在对应周出现，非本周的课是灰色虚线占位',
+            '连排的课会自动合并成一块，点课程块能看到教室、老师和周次',
+          ]}
+        />
         <View style={{ flexDirection: 'row' }}>
           <View style={{ width: GROUP_COL, paddingTop: HEADER_H }}>
             {PERIOD_GROUPS.map((g) => (

@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GuideCard } from '@/components/GuideCard';
 import { Badge, Card, GhostButton, PrimaryButton, SectionTitle, Badge as Tone } from '@/components/UIKit';
 import { radius, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
@@ -57,6 +58,16 @@ export default function GradesScreen() {
         contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingTop: 6, paddingBottom: 60 }}
         showsVerticalScrollIndicator={false}
       >
+        <GuideCard
+          id="grades"
+          icon="ribbon-outline"
+          title="成绩是自己导进来的"
+          points={[
+            '在 App 里登录教务系统，进到「成绩查询」页面，点底部「导入这个页面」',
+            '会按学期分组，并算出学分加权平均；重修的课只算最高分',
+            '数据只存在本机，换设备需要重新导入一次',
+          ]}
+        />
         {items.length === 0 ? (
           <>
             <Card style={{ backgroundColor: t.primarySoft, borderColor: 'transparent' }}>

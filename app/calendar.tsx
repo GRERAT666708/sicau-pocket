@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GuideCard } from '@/components/GuideCard';
 import { Badge, Card, SectionTitle } from '@/components/UIKit';
 import { spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
@@ -92,6 +93,16 @@ export default function CalendarScreen() {
         contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingTop: 6, paddingBottom: 60 }}
         showsVerticalScrollIndicator={false}
       >
+        <GuideCard
+          id="calendar"
+          icon="calendar-number-outline"
+          title="周次和放假都在这"
+          points={[
+            '开学日期在「设置 → 学期与周次」里改，改完这边周次会自动重算',
+            '下面是每周的课节数，一眼能看出哪周最忙',
+            '「教务网校历」是学校官方图，点开看大图（含节假日调休安排）',
+          ]}
+        />
         <Card style={{ backgroundColor: t.primarySoft, borderColor: 'transparent' }}>
           <Text style={{ fontSize: 13.5, fontWeight: '700', color: t.primaryDark }}>
             开学：{formatMD(termStart)}（{weekdayCN(termStart)}）· 共 {settings.totalWeeks} 周

@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import { AppBackground } from '@/components/AppBackground';
+import { GuideCard } from '@/components/GuideCard';
 import { Card, Chip, EmptyState, SectionTitle } from '@/components/UIKit';
 import { Heatmap } from '@/components/Heatmap';
 import { radius, spacing } from '@/constants/theme';
@@ -50,6 +51,16 @@ export default function FocusScreen() {
           </View>
         </View>
 
+        <GuideCard
+          id="focus"
+          icon="timer-outline"
+          title="番茄钟怎么用"
+          points={[
+            '选时长和科目，点「开始专注」，中途可以暂停或提前结束',
+            '结束后自动记一笔，下面的热力图能看出最近几周的节奏',
+            '切到后台计时不会停，但别在系统里把 App 从后台划掉',
+          ]}
+        />
         <View style={{ alignItems: 'center', marginTop: 26 }}>
           <View style={{ width: SIZE, height: SIZE, alignItems: 'center', justifyContent: 'center' }}>
             <Svg width={SIZE} height={SIZE} style={{ position: 'absolute' }}>

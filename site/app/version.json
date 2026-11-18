@@ -1,16 +1,18 @@
 {
-  "version": "0.10.19",
-  "versionCode": 29,
-  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.19.apk",
+  "version": "0.10.20",
+  "versionCode": 30,
+  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.20.apk",
   "fallbackUrl": "https://sicau-pocket.com/download.html",
-  "size": 48684916,
-  "sha256": "f3118413ba3b490a4e3a3d208b5a7bbf22b8f350430c24e6236cb9ccc3357c9f",
-  "releasedAt": "2026-11-17",
-  "minimumVersionCode": 27,
+  "size": 48699108,
+  "sha256": "ebd8fab0e2ee42b1d8a93b9d47d6089731b86b5bd774309deb29ac3b1b597caa",
+  "md5": "269cf2549e5151fd196d7cc563087cea",
+  "releasedAt": "2026-11-18",
+  "minimumVersionCode": 29,
   "notes": [
-    "应用内更新：点「更新」直接下载 APK，下完自动弹出系统安装器，不用再去浏览器找文件",
-    "页面与小组件水印换成金牛（去掉原校徽图形）",
-    "「关于」页新增备案号，可点击到工信部备案系统核验",
-    "课表截图导入：修「科技园」前缀、周次被「连堂学时」污染、老师丢失等问题"
+    "下载 APK 后先比对 MD5 再装，校验不过会提示并改用浏览器下载",
+    "今天 / 课表 / 专注 / 我的 / 校园卡 / 空闲教室 / 成绩 / 校历 / 导入，第一次进入各有一张引导卡",
+    "设置里「恢复初始状态」会把引导一起重置，可以重新看",
+    "构建脚本每次自动清 JS bundle 与 Metro 缓存，改了 EXPO_PUBLIC_* 立即生效",
+    "新增 scripts/bump-version.mjs，一条命令同步 app.json / lib/version.ts / 站点文案"
   ]
 }

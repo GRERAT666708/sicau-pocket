@@ -8,6 +8,7 @@ import { hydrate, useAppState } from '@/lib/store';
 import { hydrateClassrooms } from '@/lib/classroom';
 import { hydrateGrades } from '@/lib/grades';
 import { startWidgetSync } from '@/lib/widgetSync';
+import { md5SelfTestEnabled, runMd5SelfTest } from '@/lib/selfTest';
 import { useTheme } from '@/hooks/useTheme';
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -26,6 +27,11 @@ export default function RootLayout() {
   useEffect(() => {
     if (ready && hydrated) void SplashScreen.hideAsync().catch(() => {});
   }, [ready, hydrated]);
+
+  // 打包时给 EXPO_PUBLIC_MD5_SELFTEST=1 才会跑：真机上验证下载+md5 校验链路
+  useEffect(() => {
+    if (md5SelfTestEnabled()) void runMd5SelfTest();
+  }, []);
 
   // 课表变化时把「今天」写进 widget.json，供桌面小组件读取
   useEffect(() => {

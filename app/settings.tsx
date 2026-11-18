@@ -301,7 +301,11 @@ export default function SettingsScreen() {
                 onPress={() => {
                   if (confirm === 'courses') actions.clearCourses();
                   else if (confirm === 'sessions') actions.clearSessions();
-                  else void actions.resetAll();
+                  else {
+                    void actions.resetAll();
+                    // 引导也一起重置，下次进各板块会重新提示
+                    void import('@/lib/guides').then((m) => m.resetGuides());
+                  }
                   setConfirm(null);
                 }}
                 style={{ flex: 1, paddingVertical: 10, borderRadius: radius.sm, backgroundColor: t.danger, alignItems: 'center' }}

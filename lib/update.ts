@@ -15,6 +15,8 @@ export type VersionManifest = {
   apkUrl: string;
   size?: number;
   sha256?: string;
+  /** 下载后校验用（expo-file-system 能直接算 md5，sha256 需要额外原生能力） */
+  md5?: string;
   releasedAt?: string;
   notes?: string[];
   /** 低于这个 versionCode 的版本会被强制提示（暂未使用，留给以后） */

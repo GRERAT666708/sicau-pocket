@@ -93,11 +93,23 @@ const newTree = await api(`/repos/${REPO}/git/trees`, {
   body: JSON.stringify({ base_tree: head.tree.sha, tree }),
 });
 
+/** 提交说明直接取版本清单里的 notes，避免每次手改 */
+function commitMessage(version) {
+  let notes = [];
+  try {
+    const manifest = JSON.parse(readFileSync('site/app/version.json', 'utf8'));
+    if (Array.isArray(manifest.notes)) notes = manifest.notes.filter((n) => typeof n === 'string' && n.trim());
+  } catch {
+    /* 没有清单就只写版本号 */
+  }
+  return [`release: v${version}`, '', ...notes.map((n) => `- ${n}`)].join('\n');
+}
+
 const version = JSON.parse(readFileSync('app.json', 'utf8')).expo.version;
 const commit = await api(`/repos/${REPO}/git/commits`, {
   method: 'POST',
   body: JSON.stringify({
-    message: `release: v${version}\n\n- 课表连堂合并、非本周占位、分组列\n- 2×2 小组件显示多门课，深浅色兜底\n- 电费 · 一卡通合并入口，主页显示电费余额\n- 宿舍房间记忆 + 重新选宿舍\n- 空闲教室教务真实数据、成绩查询、官方校历\n- 路线图更新：桌面小组件已实现`,
+    message: commitMessage(version),
     tree: newTree.sha,
     parents: [headSha],
   }),

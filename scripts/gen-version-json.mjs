@@ -38,6 +38,7 @@ if (!existsSync(apkPath)) {
 
 const buf = readFileSync(apkPath);
 const sha256 = createHash('sha256').update(buf).digest('hex');
+const md5 = createHash('md5').update(buf).digest('hex');
 const size = statSync(apkPath).size;
 
 let notes = [
@@ -60,6 +61,7 @@ const manifest = {
   fallbackUrl: 'https://sicau-pocket.com/download.html',
   size,
   sha256,
+  md5,
   releasedAt: new Date().toISOString().slice(0, 10),
   minimumVersionCode: minIdx >= 0 ? Number(args[minIdx + 1]) : 1,
   notes,
