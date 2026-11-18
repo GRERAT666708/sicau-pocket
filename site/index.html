@@ -38,7 +38,7 @@
     <div>
       <span class="pill">校园助手 · v0.10.20</span>
       <h1>查课表、算空闲、记专注，<br><em>一个 App 就够了</em></h1>
-      <p class="lead">这个站介绍的 App 叫「川农口袋」。它把每天都用得到的几件事收进一个安静的界面里：一屏看完一周课表、抬头知道现在上什么课、找间空教室自习、期末顺手查个成绩。数据只存在你自己的手机上。</p>
+      <p class="lead">这个站介绍的 App 叫「川农口袋」。它把每天都用得到的几件事收进一个安静的界面里：一周课表摊在一屏里、左右滑两下就看全，抬头知道现在上什么课、找间空教室自习、期末顺手查个成绩。数据只存在你自己的手机上。</p>
       <div class="cta-row">
         <a class="btn btn-primary" id="hero-dl" data-dl href="/apk/sicau-pocket-latest.apk" download>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
@@ -156,8 +156,10 @@
           <tr><td style="padding:8px 0;color:var(--ink-500);white-space:nowrap">教务系统</td><td style="padding:8px 0"><code>jiaowu.sicau.edu.cn</code></td></tr>
           <tr><td style="padding:8px 0;color:var(--ink-500)">校园 VPN</td><td style="padding:8px 0"><code>webvpn.sicau.edu.cn</code></td></tr>
           <tr><td style="padding:8px 0;color:var(--ink-500)">一卡通</td><td style="padding:8px 0"><code>yktwechat.sicau.edu.cn</code></td></tr>
+          <tr><td style="padding:8px 0;color:var(--ink-500)">版本检查</td><td style="padding:8px 0"><code>sicau-pocket.com</code></td></tr>
         </table>
-        <p style="margin-top:10px">只有这三类请求，都是直连学校域名，不经过我们自己的任何中转服务器。</p>
+        <p style="margin-top:10px">就这四类请求。前三条直连四川农业大学自己的系统；第四条是本项目的纯静态站点，只取一份版本号文件（<code>app/version.json</code>），请求里不带设备号、不带账号、不带任何标识，只用来提示有没有新版本。</p>
+        <p>版本检查可以在「设置 → 自动检查更新」关掉，关掉后只有你自己点「检查更新」时才会联网；取不到也不影响任何功能。所有请求都不经过我们自己的中转服务器。</p>
       </div>
     </div>
   </div>
