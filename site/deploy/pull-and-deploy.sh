@@ -83,7 +83,14 @@ else
   for prefix in "https://ghfast.top/" "https://gh-proxy.com/" ""; do
     url="${prefix}${ASSET}"
     echo "    试 ${prefix:-直连} ..."
-    if curl -fL --max-time 120 --retry 1 -o "$APK.part" "$url" && [[ "$(stat -c%s "$APK.part" 2>/dev/null || echo 0)" -gt 5000000 ]]; then
+    if curl -fL --max-time 300 --retry 1 -o "$APK.part" "$url" && [[ "$(stat -c%s "$APK.part" 2>/dev/null || echo 0)" -gt 5000000 ]]; then
+      WANT="$(sed -n 's/.*"md5": *"\([0-9a-f]\{32\}\)".*/\1/p' "$DIR/app/version.json" | head -1)"
+      GOT="$(md5sum "$APK.part" | cut -d' ' -f1)"
+      if [[ -n "$WANT" && "$WANT" != "$GOT" ]]; then
+        echo "    ! md5 不一致（期望 $WANT，实际 $GOT），换下一个源"
+        rm -f "$APK.part"
+        continue
+      fi
       mv "$APK.part" "$APK"
       cp "$APK" "$DIR/apk/sicau-pocket-${VERSION}.apk"
       ok=1

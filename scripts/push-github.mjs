@@ -69,6 +69,11 @@ const headSha = ref.object.sha;
 const head = await api(`/repos/${REPO}/git/commits/${headSha}`);
 console.log(`当前 HEAD ${headSha.slice(0, 7)}`);
 
+/** 资产名与部署脚本约定一致：sicau-pocket-v<version>-arm64.apk */
+function assetName() {
+  return `sicau-pocket-v${version}-arm64.apk`;
+}
+
 const tree = [];
 for (const full of files) {
   const rel = relative(ROOT, full).split('\\').join('/');
@@ -146,7 +151,7 @@ if (TAG) {
 
   if (APK) {
     const data = readFileSync(APK);
-    const res = await fetch(`https://uploads.github.com/repos/${REPO}/releases/${release.id}/assets?name=${encodeURIComponent(APK.split('/').pop())}`, {
+    const res = await fetch(`https://uploads.github.com/repos/${REPO}/releases/${release.id}/assets?name=${encodeURIComponent(assetName())}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${TOKEN}`,
