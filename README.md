@@ -282,13 +282,6 @@ npx eas-cli@latest build -p android --profile preview
 - **本地构建（可选）**：`npx eas-cli@latest build -p android --profile preview --local` 需要本机有 Android SDK + JDK 17；没有的话就用云构建。
 - **iOS**：暂不支持。要出 iOS 包需要 Apple 开发者账号（$99/年），当前项目没有做这部分适配与签名。
 
-### 自己的 GitHub 主页链接在哪
-
-1. 登录 GitHub，右上角头像 → **Your profile**，地址栏就是 `https://github.com/你的用户名`。
-2. 或者直接访问 `https://github.com/settings/profile`，页面右上角会显示 `Your personal account` 那一栏的链接。
-3. 命令行也能看：`git config --get user.name`（不一定是用户名），更稳的是 `gh api user -q .login`（装了 GitHub CLI 的话）。
-
-本项目已经按 `https://github.com/GRERAT666708` 设好：包名 `io.github.grerat666708.sicaupocket`（GitHub 用户名大小写不敏感，但 Android 包名只能小写）。
 
 ## 本地运行
 
