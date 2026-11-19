@@ -1,18 +1,15 @@
 {
-  "version": "0.10.20",
-  "versionCode": 30,
-  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.20.apk",
+  "version": "0.10.21",
+  "versionCode": 31,
+  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.21.apk",
   "fallbackUrl": "https://sicau-pocket.com/download.html",
-  "size": 48699108,
-  "sha256": "ebd8fab0e2ee42b1d8a93b9d47d6089731b86b5bd774309deb29ac3b1b597caa",
-  "md5": "269cf2549e5151fd196d7cc563087cea",
-  "releasedAt": "2026-11-18",
-  "minimumVersionCode": 29,
+  "size": 48709572,
+  "sha256": "ba22ca61a707550ff0fe58a1dd0988619a744a2612adc862bfd04c9df8051fcf",
+  "md5": "3678b1d547add33b2656cef27527444c",
+  "releasedAt": "2026-11-19",
+  "minimumVersionCode": 30,
   "notes": [
-    "下载 APK 后先比对 MD5 再装，校验不过会提示并改用浏览器下载",
-    "今天 / 课表 / 专注 / 我的 / 校园卡 / 空闲教室 / 成绩 / 校历 / 导入，第一次进入各有一张引导卡",
-    "设置里「恢复初始状态」会把引导一起重置，可以重新看",
-    "构建脚本每次自动清 JS bundle 与 Metro 缓存，改了 EXPO_PUBLIC_* 立即生效",
-    "新增 scripts/bump-version.mjs，一条命令同步 app.json / lib/version.ts / 站点文案"
+    "设置里新增「导出到系统日历（.ics）」：整学期课表连周次、单双周一起导进手机自带日历，之后桌面日历卡片、负一屏日程、上课提醒都能用。",
+    "鸿蒙（卓易通）没有安卓小组件，用这个替代；设置页里也加了说明。"
   ]
 }

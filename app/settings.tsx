@@ -12,6 +12,7 @@ import type { Campus } from '@/lib/types';
 import { useTheme } from '@/hooks/useTheme';
 import { campusSourceText, effectiveCampus } from '@/lib/campusState';
 import { APP_VERSION } from '@/lib/version';
+import { exportIcs } from '@/lib/ics';
 
 const THEMES: { key: 'system' | 'light' | 'dark'; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { key: 'system', label: '跟随系统', icon: 'phone-portrait-outline' },
@@ -23,7 +24,9 @@ export default function SettingsScreen() {
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { settings, sessions, semesters } = useAppState();
+  const { settings, sessions, semesters, courses } = useAppState();
+  const [icsBusy, setIcsBusy] = useState(false);
+  const [icsNotice, setIcsNotice] = useState<string | null>(null);
   const campus = effectiveCampus(settings);
   const byMajorCampus = settings.major ? campusOfMajor(settings.major) : null;
   const [confirm, setConfirm] = useState<null | 'courses' | 'sessions' | 'all'>(null);
@@ -265,6 +268,34 @@ export default function SettingsScreen() {
         <SectionTitle title="数据" />
         <Card style={{ paddingVertical: 2, paddingHorizontal: 16 }}>
           <ListRow
+            icon="calendar-outline"
+            title={icsBusy ? '正在生成日历…' : '导出到系统日历（.ics）'}
+            subtitle="鸿蒙 / 安卓 / iOS 通用：导入后系统日历自带桌面卡片和上课提醒"
+            onPress={async () => {
+              if (icsBusy) return;
+              setIcsBusy(true);
+              setIcsNotice(null);
+              const res = await exportIcs({
+                termName: settings.termName,
+                termStart: settings.termStart,
+                courses,
+              });
+              setIcsBusy(false);
+              if (res.ok) {
+                setIcsNotice(`已生成 ${res.events} 条日程，正在打开系统日历；在日历里确认导入即可。`);
+              } else if (res.reason === 'no-courses') {
+                setIcsNotice('课表还是空的，先导入自己的课表再导出。');
+              } else if (res.reason === 'no-term-start') {
+                setIcsNotice('开学日期不是有效日期，先在上面「学期与周次」里改一下。');
+              } else if (res.savedTo) {
+                setIcsNotice('日历没能直接打开，已把 .ics 存到你选的文件夹；用文件管理器点开它即可导入。');
+              } else {
+                setIcsNotice('没找到能打开 .ics 的日历 App；可以装一个系统日历，或从文件管理器导入。');
+              }
+            }}
+          />
+          <View style={{ height: 1, backgroundColor: t.border }} />
+          <ListRow
             icon="download-outline"
             title="导入示例课表"
             subtitle="动物医学专业大一示例，覆盖 8 门课"
@@ -282,6 +313,18 @@ export default function SettingsScreen() {
           />
           <View style={{ height: 1, backgroundColor: t.border }} />
           <ListRow icon="refresh-outline" title="恢复初始状态" danger onPress={() => setConfirm('all')} />
+        </Card>
+
+        {icsNotice ? (
+          <Text style={{ fontSize: 11.5, color: t.textSecondary, marginTop: 8, lineHeight: 17 }}>{icsNotice}</Text>
+        ) : null}
+
+        <Card style={{ marginTop: 12, backgroundColor: t.accentSoft, borderColor: 'transparent' }}>
+          <Text style={{ fontSize: 12.5, fontWeight: '700', color: t.text }}>鸿蒙（卓易通）没有安卓小组件</Text>
+          <Text style={{ fontSize: 11.5, color: t.textSecondary, marginTop: 6, lineHeight: 18 }}>
+            安卓小组件要靠桌面宿主才能显示，鸿蒙桌面不承载安卓控件，所以在卓易通里装的本 App
+            挂不出小组件。用上面的「导出到系统日历」代替：导入后到桌面加一个「日历」卡片，效果≈课表卡片，还有上课提醒。
+          </Text>
         </Card>
 
         {confirm ? (
