@@ -9,6 +9,8 @@ import { hydrateClassrooms } from '@/lib/classroom';
 import { hydrateGrades } from '@/lib/grades';
 import { startWidgetSync } from '@/lib/widgetSync';
 import { md5SelfTestEnabled, runMd5SelfTest } from '@/lib/selfTest';
+import { takeWhatsNew, type WhatsNewInfo } from '@/lib/whatsNew';
+import { WhatsNewModal } from '@/components/WhatsNew';
 import { useTheme } from '@/hooks/useTheme';
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -17,6 +19,7 @@ export default function RootLayout() {
   const { hydrated } = useAppState();
   const t = useTheme();
   const [ready, setReady] = useState(false);
+  const [whatsNew, setWhatsNew] = useState<WhatsNewInfo | null>(null);
 
   useEffect(() => {
     hydrate().finally(() => setReady(true));
@@ -32,6 +35,12 @@ export default function RootLayout() {
   useEffect(() => {
     if (md5SelfTestEnabled()) void runMd5SelfTest();
   }, []);
+
+  // 更新后第一次启动：弹一次「这次更新了什么」
+  useEffect(() => {
+    if (!ready || !hydrated) return;
+    void takeWhatsNew().then(setWhatsNew);
+  }, [ready, hydrated]);
 
   // 课表变化时把「今天」写进 widget.json，供桌面小组件读取
   useEffect(() => {
@@ -67,6 +76,7 @@ export default function RootLayout() {
         <Stack.Screen name="privacy" options={{ headerShown: false }} />
         <Stack.Screen name="about" />
       </Stack>
+      <WhatsNewModal info={whatsNew} onClose={() => setWhatsNew(null)} />
     </SafeAreaProvider>
   );
 }

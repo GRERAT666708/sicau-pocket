@@ -12,7 +12,7 @@ import type { Campus } from '@/lib/types';
 import { useTheme } from '@/hooks/useTheme';
 import { campusSourceText, effectiveCampus } from '@/lib/campusState';
 import { APP_VERSION } from '@/lib/version';
-import { exportIcs } from '@/lib/ics';
+import { exportIcs, shareIcs } from '@/lib/ics';
 
 const THEMES: { key: 'system' | 'light' | 'dark'; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { key: 'system', label: '跟随系统', icon: 'phone-portrait-outline' },
@@ -26,6 +26,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { settings, sessions, semesters, courses } = useAppState();
   const [icsBusy, setIcsBusy] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
   const [icsNotice, setIcsNotice] = useState<string | null>(null);
   const campus = effectiveCampus(settings);
   const byMajorCampus = settings.major ? campusOfMajor(settings.major) : null;
@@ -291,6 +292,34 @@ export default function SettingsScreen() {
                 setIcsNotice('日历没能直接打开，已把 .ics 存到你选的文件夹；用文件管理器点开它即可导入。');
               } else {
                 setIcsNotice('没找到能打开 .ics 的日历 App；可以装一个系统日历，或从文件管理器导入。');
+              }
+            }}
+          />
+          <View style={{ height: 1, backgroundColor: t.border }} />
+          <ListRow
+            icon="share-outline"
+            title={shareBusy ? '正在打包 .ics…' : '分享 .ics 文件'}
+            subtitle="发到微信 / QQ / 邮箱，对方或你的鸿蒙日历打开就能导入"
+            onPress={async () => {
+              if (shareBusy) return;
+              setShareBusy(true);
+              setIcsNotice(null);
+              const res = await shareIcs({
+                termName: settings.termName,
+                termStart: settings.termStart,
+                courses,
+              });
+              setShareBusy(false);
+              if (res.ok) {
+                setIcsNotice(`已把 ${res.events} 条日程分享出去；在微信里发给自己，再在电脑/平板上用日历打开也行。`);
+              } else if (res.reason === 'no-courses') {
+                setIcsNotice('课表还是空的，先导入自己的课表再分享。');
+              } else if (res.reason === 'no-term-start') {
+                setIcsNotice('开学日期不是有效日期，先在上面「学期与周次」里改一下。');
+              } else if (res.savedTo) {
+                setIcsNotice('这台设备没有系统分享面板，已把 .ics 存到你选的文件夹。');
+              } else {
+                setIcsNotice('分享面板没打开成功，换个方式再试一次。');
               }
             }}
           />

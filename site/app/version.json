@@ -1,15 +1,15 @@
 {
-  "version": "0.10.21",
-  "versionCode": 31,
-  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.21.apk",
+  "version": "0.10.22",
+  "versionCode": 32,
+  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.22.apk",
   "fallbackUrl": "https://sicau-pocket.com/download.html",
-  "size": 48709572,
-  "sha256": "ba22ca61a707550ff0fe58a1dd0988619a744a2612adc862bfd04c9df8051fcf",
-  "md5": "3678b1d547add33b2656cef27527444c",
+  "size": 48844037,
+  "sha256": "a1e43ab0fbdee06e60c3b7dbec9dd1464b5faf5f2be89bffde2280ebfe70df32",
+  "md5": "2a6a1828eee83b394152afaebe60a667",
   "releasedAt": "2026-11-19",
-  "minimumVersionCode": 30,
+  "minimumVersionCode": 31,
   "notes": [
-    "设置里新增「导出到系统日历（.ics）」：整学期课表连周次、单双周一起导进手机自带日历，之后桌面日历卡片、负一屏日程、上课提醒都能用。",
-    "鸿蒙（卓易通）没有安卓小组件，用这个替代；设置页里也加了说明。"
+    "课表可以「分享成 .ics」：发到微信 / QQ / 邮箱，对方点开就能加进自己的日历（周次、单双周、上课提醒都在）。",
+    "更新后第一次打开会弹一张小卡片，告诉你这次改了什么；点「知道了」后不再出现，首次安装不弹。"
   ]
 }

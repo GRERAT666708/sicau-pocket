@@ -235,6 +235,61 @@ async function saveToPickedFolder(text: string, fileName: string): Promise<strin
   }
 }
 
+/** 把课表文本写进缓存目录，返回文件路径 */
+async function writeIcsFile(text: string, termName: string): Promise<string | null> {
+  try {
+    const FileSystem = require('expo-file-system/legacy');
+    const path = `${FileSystem.cacheDirectory}${icsFileName(termName)}`;
+    await FileSystem.writeAsStringAsync(path, text, { encoding: FileSystem.EncodingType.UTF8 });
+    return path;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 生成 .ics 后走系统分享面板（微信 / QQ / 邮件 / 文件…）。
+ * 用于把课表发给同学、或在鸿蒙那一侧用系统日历打开。
+ */
+export async function shareIcs(options: IcsOptions): Promise<IcsExportResult> {
+  if (!options.courses.length) return { ok: false, reason: 'no-courses' };
+  if (!parseTermStart(options.termStart)) return { ok: false, reason: 'no-term-start' };
+
+  const text = buildIcs(options);
+  const events = (text.match(/BEGIN:VEVENT/g) ?? []).length;
+  const { Platform } = require('react-native');
+
+  if (Platform.OS === 'web') {
+    const blob = new Blob([text], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = icsFileName(options.termName);
+    a.click();
+    URL.revokeObjectURL(url);
+    return { ok: true, uri: url, events };
+  }
+
+  const path = await writeIcsFile(text, options.termName);
+  if (!path) return { ok: false, reason: 'write' };
+
+  try {
+    const Sharing = require('expo-sharing');
+    if (!(await Sharing.isAvailableAsync())) {
+      const savedTo = await saveToPickedFolder(text, icsFileName(options.termName));
+      return { ok: false, reason: 'unsupported', savedTo: savedTo ?? undefined, events };
+    }
+    await Sharing.shareAsync(path, {
+      mimeType: 'text/calendar',
+      dialogTitle: '分享课表（.ics）',
+      UTI: 'com.apple.ical.ics',
+    });
+    return { ok: true, uri: path, events };
+  } catch {
+    return { ok: false, reason: 'open', events };
+  }
+}
+
 /**
  * 写文件并尝试用系统日历打开。
  * 安卓/鸿蒙：ACTION_VIEW + text/calendar，让用户自己选日历 App 导入；
@@ -261,14 +316,8 @@ export async function exportIcs(options: IcsOptions): Promise<IcsExportResult> {
   }
 
   const FileSystem = require('expo-file-system/legacy');
-  const path = `${FileSystem.cacheDirectory}${icsFileName(options.termName)}`;
-  try {
-    await FileSystem.writeAsStringAsync(path, text, {
-      encoding: FileSystem.EncodingType.UTF8,
-    });
-  } catch {
-    return { ok: false, reason: 'write' };
-  }
+  const path = await writeIcsFile(text, options.termName);
+  if (!path) return { ok: false, reason: 'write' };
 
   if (Platform.OS !== 'android') return { ok: false, reason: 'unsupported' };
 
