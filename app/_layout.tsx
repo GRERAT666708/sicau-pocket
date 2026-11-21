@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
@@ -8,6 +8,8 @@ import { hydrate, useAppState } from '@/lib/store';
 import { hydrateClassrooms } from '@/lib/classroom';
 import { hydrateGrades } from '@/lib/grades';
 import { startWidgetSync } from '@/lib/widgetSync';
+import { ensureMaintenanceTask, startReminderSync } from '@/lib/backgroundTasks';
+import { startNotificationTapRouting } from '@/lib/reminders';
 import { md5SelfTestEnabled, runMd5SelfTest } from '@/lib/selfTest';
 import { takeWhatsNew, type WhatsNewInfo } from '@/lib/whatsNew';
 import { WhatsNewModal } from '@/components/WhatsNew';
@@ -48,6 +50,24 @@ export default function RootLayout() {
     return startWidgetSync();
   }, [ready, hydrated]);
 
+  // 上课提醒：课表/设置一变就重排（前台兜底，后台任务不保证准点）
+  useEffect(() => {
+    if (!ready || !hydrated) return;
+    return startReminderSync();
+  }, [ready, hydrated]);
+
+  // 注册后台维护任务（小组件数据 + 提醒补排，系统决定多久跑一次，最短 15 分钟）
+  useEffect(() => {
+    if (!ready || !hydrated) return;
+    void ensureMaintenanceTask();
+  }, [ready, hydrated]);
+
+  // 点上课提醒的通知 → 打开课表
+  useEffect(() => {
+    if (!ready || !hydrated) return;
+    return startNotificationTapRouting((route) => router.push(route as never));
+  }, [ready, hydrated]);
+
   if (!ready || !hydrated) {
     return <View style={{ flex: 1, backgroundColor: t.bg }} />;
   }
@@ -69,7 +89,6 @@ export default function RootLayout() {
         <Stack.Screen name="settings" />
         <Stack.Screen name="import" />
         <Stack.Screen name="web-import" />
-        <Stack.Screen name="perfectcampus" options={{ presentation: 'card' }} />
         <Stack.Screen name="grades" />
         <Stack.Screen name="grade-import" options={{ presentation: 'card' }} />
         <Stack.Screen name="calendar" />

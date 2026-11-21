@@ -68,15 +68,27 @@ echo "  ✓ $CONF 已启用（这一步之后 http://<IP>/ 就能打开官网了
 echo "== 4/5 下载安装包 =="
 VERSION="$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$DIR/app/version.json" | head -1)"
 APK="$DIR/apk/sicau-pocket-latest.apk"
+WANT_MD5="$(sed -n 's/.*"md5": *"\([0-9a-f]\{32\}\)".*/\1/p' "$DIR/app/version.json" | head -1)"
+VERSIONED="$DIR/apk/sicau-pocket-${VERSION}.apk"
+
+# 「本地包是不是就是 version.json 那一版」：大小 + md5 都对才算，光看 .apk-version 不够
+apk_is_current() {
+  [[ -s "$APK" ]] || return 1
+  [[ "$(stat -c%s "$APK" 2>/dev/null || echo 0)" -gt 5000000 ]] || return 1
+  if [[ -n "$WANT_MD5" ]]; then
+    [[ "$(md5sum "$APK" | cut -d' ' -f1)" == "$WANT_MD5" ]] || return 1
+  fi
+  return 0
+}
 
 if [[ "${SKIP_APK:-0}" == "1" ]]; then
   echo "  · SKIP_APK=1，跳过"
 elif [[ -z "$VERSION" ]]; then
   echo "  ! 读不到 version.json 里的版本号，跳过 APK"
-elif [[ -s "$APK" ]] && [[ "$(stat -c%s "$APK")" -gt 5000000 ]] \
-     && [[ -f "$DIR/apk/.apk-version" ]] && [[ "$(cat "$DIR/apk/.apk-version")" == "$VERSION" ]]; then
-  echo "  · 已有 v$VERSION 的安装包（$(du -h "$APK" | cut -f1)），跳过"
-  cp -f "$APK" "$DIR/apk/sicau-pocket-${VERSION}.apk"
+elif apk_is_current; then
+  echo "  · 已有 v$VERSION 的安装包且 md5 一致（$(du -h "$APK" | cut -f1)），跳过下载"
+  cp -f "$APK" "$VERSIONED"
+  printf '%s' "$VERSION" > "$DIR/apk/.apk-version"
 else
   mkdir -p "$DIR/apk"
   ASSET="https://github.com/${REPO}/releases/download/v${VERSION}/sicau-pocket-v${VERSION}-arm64.apk"
@@ -86,15 +98,14 @@ else
     url="${prefix}${ASSET}"
     echo "    试 ${prefix:-直连} ..."
     if curl -fL --max-time 300 --retry 1 -o "$APK.part" "$url" && [[ "$(stat -c%s "$APK.part" 2>/dev/null || echo 0)" -gt 5000000 ]]; then
-      WANT="$(sed -n 's/.*"md5": *"\([0-9a-f]\{32\}\)".*/\1/p' "$DIR/app/version.json" | head -1)"
       GOT="$(md5sum "$APK.part" | cut -d' ' -f1)"
-      if [[ -n "$WANT" && "$WANT" != "$GOT" ]]; then
-        echo "    ! md5 不一致（期望 $WANT，实际 $GOT），换下一个源"
+      if [[ -n "$WANT_MD5" && "$WANT_MD5" != "$GOT" ]]; then
+        echo "    ! md5 不一致（期望 $WANT_MD5，实际 $GOT），换下一个源"
         rm -f "$APK.part"
         continue
       fi
       mv "$APK.part" "$APK"
-      cp "$APK" "$DIR/apk/sicau-pocket-${VERSION}.apk"
+      cp "$APK" "$VERSIONED"
       printf '%s' "$VERSION" > "$DIR/apk/.apk-version"
       ok=1
       break
@@ -109,12 +120,28 @@ else
   fi
 fi
 
+# 只留最近两个版本化文件，避免 /apk/ 越堆越大（latest 永远保留）
+if [[ -d "$DIR/apk" ]]; then
+  ls -1t "$DIR"/apk/sicau-pocket-[0-9]*.apk 2>/dev/null | tail -n +3 | while read -r f; do
+    rm -f "$f"
+  done
+fi
+
 echo "== 5/5 自检 =="
 systemctl is-active --quiet nginx && echo "  ✓ nginx running"
 echo -n "  首页："; curl -sI --max-time 5 http://127.0.0.1/ | head -1
 echo -n "  私有："; curl -sI --max-time 5 http://127.0.0.1/privacy.html | head -1
 if [[ -s "$APK" ]]; then
   echo -n "  APK："; curl -sI --max-time 5 http://127.0.0.1/apk/sicau-pocket-latest.apk | grep -i content-type || true
+  GOT_MD5="$(md5sum "$APK" | cut -d' ' -f1)"
+  echo "  站点包：$(stat -c%s "$APK") 字节 · md5 $GOT_MD5"
+  if [[ -n "$WANT_MD5" ]]; then
+    if [[ "$GOT_MD5" == "$WANT_MD5" ]]; then
+      echo "  ✓ 与 version.json（v$VERSION）一致"
+    else
+      echo "  ✗ 与 version.json（v$VERSION，md5 $WANT_MD5）不一致：用户会下到旧包" >&2
+    fi
+  fi
 fi
 echo
 echo "下一步：浏览器开 http://<公网IP>/ 验收 → 解析域名（A 记录 @ 和 www）→ 备案 → certbot 上 HTTPS"

@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React, { useRef, useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Badge, Card, ListRow, SectionTitle } from '@/components/UIKit';
+import { Card, ListRow, SectionTitle } from '@/components/UIKit';
 import { radius, spacing } from '@/constants/theme';
 import { currentWeek, useAppState } from '@/lib/store';
 import { APP_VERSION } from '@/lib/version';
@@ -26,7 +26,6 @@ const SERVICES: {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
-  soon?: boolean;
   /** 入口下方的小字状态，比如「暂不可用」 */
   hint?: string;
   /** Ionicons 字形视觉大小不一，按字形微调，让几个入口的图标看起来一样大 */
@@ -219,9 +218,8 @@ export default function MeScreen() {
           {SERVICES.map((s) => (
             <GlassPressable
               key={s.key}
-              disabled={s.soon}
               onPress={() => router.push(ROUTES[s.key] ?? (`/campus/${s.key}` as Href))}
-              style={{ width: '48%', opacity: s.soon ? 0.55 : 1 }}
+              style={{ width: '48%' }}
               radiusValue={radius.md}
               intensity={18}
               contentStyle={{ paddingVertical: 15, paddingHorizontal: 12, gap: 9 }}
@@ -242,7 +240,6 @@ export default function MeScreen() {
               {s.hint ? (
                 <Text style={{ fontSize: 9.5, color: t.textTertiary, marginTop: -3 }}>{s.hint}</Text>
               ) : null}
-              {s.soon ? <Badge text="即将开放" /> : null}
             </GlassPressable>
           ))}
         </View>

@@ -57,6 +57,10 @@ export type AppSettings = {
   userName?: string;
   /** 是否允许 App 静默检查更新（默认允许；关掉后只在你手动点「检查更新」时联网） */
   autoUpdateCheck?: boolean;
+  /** 上课前要不要发本地提醒（默认关，用户自己开） */
+  classReminder?: boolean;
+  /** 提前多少分钟提醒：5 / 10 / 15 / 20 / 30 */
+  classReminderLead?: number;
 };
 
 export type Campus = '雅安' | '成都' | '都江堰';

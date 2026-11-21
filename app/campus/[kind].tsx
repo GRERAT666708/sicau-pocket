@@ -3,11 +3,10 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { AppState, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { GuideCard } from '@/components/GuideCard';
 import { Badge, Card, Chip, GhostButton, PrimaryButton, SectionTitle } from '@/components/UIKit';
 import { radius, spacing } from '@/constants/theme';
-import { CAMPUS_BUILDINGS, demoEcard, demoElectricity } from '@/lib/campus';
+import { CAMPUS_BUILDINGS } from '@/lib/campus';
 import {
   busyAt,
   buildingsOf,
@@ -75,9 +74,7 @@ export default function CampusScreen() {
           ) : (
             <Badge text="待同步" tone="warn" />
           )
-        ) : (
-          <Badge text="演示数据" tone="warn" />
-        )}
+        ) : null}
       </View>
 
       <ScrollView
@@ -96,147 +93,9 @@ export default function CampusScreen() {
             ]}
           />
         ) : null}
-        {kind === 'electricity' ? <Electricity /> : null}
-        {kind === 'ecard' ? <Ecard /> : null}
-        {kind === 'classroom' ? <Classroom /> : null}
-        <DataNote />
+        <Classroom />
       </ScrollView>
     </View>
-  );
-}
-
-function Electricity() {
-  const t = useTheme();
-  const router = useRouter();
-  const data = useMemo(() => demoElectricity(), []);
-  const max = Math.max(...data.dailyUsage.map((d) => d.kwh), 1);
-  const today = data.dailyUsage[data.dailyUsage.length - 1];
-  return (
-    <>
-      <LinearGradient
-        colors={[t.primary, t.primaryDark]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ borderRadius: radius.lg, padding: 20, overflow: 'hidden' }}
-      >
-        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>{data.dorm}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 8 }}>
-          <Text style={{ color: '#fff', fontSize: 15 }}>¥</Text>
-          <Text style={{ color: '#fff', fontSize: 38, fontWeight: '700', letterSpacing: 0.5 }}>{data.balance.toFixed(2)}</Text>
-          <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12 }}>可用余额</Text>
-        </View>
-        <View style={{ flexDirection: 'row', gap: 20, marginTop: 14 }}>
-          <View>
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11 }}>今日用电</Text>
-            <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600', marginTop: 2 }}>{today.kwh} kWh</Text>
-          </View>
-          <View>
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11 }}>近 14 天</Text>
-            <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600', marginTop: 2 }}>
-              {data.dailyUsage.reduce((s, d) => s + d.kwh, 0).toFixed(1)} kWh
-            </Text>
-          </View>
-        </View>
-      </LinearGradient>
-
-      <View style={{ marginTop: spacing.xl }}>
-        <SectionTitle title="近 14 天用电" />
-        <Card>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 5, height: 110 }}>
-            {data.dailyUsage.map((d, i) => (
-              <View key={d.date} style={{ flex: 1, alignItems: 'center', gap: 5 }}>
-                <View
-                  style={{
-                    width: '100%',
-                    height: Math.max(6, (d.kwh / max) * 90),
-                    borderRadius: 4,
-                    backgroundColor: i === data.dailyUsage.length - 1 ? t.primary : `${t.primary}55`,
-                  }}
-                />
-              </View>
-            ))}
-          </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-            <Text style={{ fontSize: 10, color: t.textTertiary }}>{data.dailyUsage[0].date.slice(5)}</Text>
-            <Text style={{ fontSize: 10, color: t.textTertiary }}>今天</Text>
-          </View>
-        </Card>
-      </View>
-
-      <View style={{ marginTop: spacing.lg }}>
-        <ListRowCard
-          icon="wallet-outline"
-          title="缴费充值"
-          sub="学校一卡通页面里直接充"
-          onPress={() => router.push('/ecard')}
-        />
-      </View>
-
-      <EcardEntryCard what="宿舍电费" />
-    </>
-  );
-}
-
-function Ecard() {
-  const t = useTheme();
-  const data = useMemo(() => demoEcard(), []);
-  return (
-    <>
-      <LinearGradient
-        colors={['#3A4C6E', '#22304A']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ borderRadius: radius.lg, padding: 20, overflow: 'hidden' }}
-      >
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>校园一卡通 · 川农</Text>
-          <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>{isoDate(new Date())}</Text>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 14 }}>
-          <Text style={{ color: '#fff', fontSize: 15 }}>¥</Text>
-          <Text style={{ color: '#fff', fontSize: 38, fontWeight: '700' }}>{data.balance.toFixed(2)}</Text>
-        </View>
-        <View style={{ flexDirection: 'row', gap: 28, marginTop: 16 }}>
-          <View>
-            <Text style={{ color: 'rgba(255,255,255,0.65)', fontSize: 11 }}>今日消费</Text>
-            <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600', marginTop: 2 }}>¥{data.todaySpent.toFixed(2)}</Text>
-          </View>
-          <View>
-            <Text style={{ color: 'rgba(255,255,255,0.65)', fontSize: 11 }}>本月消费</Text>
-            <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600', marginTop: 2 }}>¥{data.monthSpent.toFixed(2)}</Text>
-          </View>
-        </View>
-      </LinearGradient>
-
-      <EcardEntryCard what="校园一卡通" />
-
-
-      <View style={{ marginTop: spacing.xl }}>
-        <SectionTitle title="最近消费" />
-        <Card style={{ paddingVertical: 2, paddingHorizontal: 16 }}>
-          {data.transactions.map((tx, i) => (
-            <View
-              key={tx.id}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                paddingVertical: 12,
-                borderTopWidth: i === 0 ? 0 : 1,
-                borderTopColor: t.border,
-              }}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, color: t.text }}>{tx.place}</Text>
-                <Text style={{ fontSize: 11, color: t.textTertiary, marginTop: 2 }}>
-                  {new Date(tx.time).getMonth() + 1}月{new Date(tx.time).getDate()}日 {fmtTime(tx.time)}
-                </Text>
-              </View>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: t.text }}>{tx.amount.toFixed(2)}</Text>
-            </View>
-          ))}
-        </Card>
-      </View>
-    </>
   );
 }
 
@@ -445,30 +304,7 @@ function Classroom() {
   );
 }
 
-function PerfectCampusNotice({ what }: { what: string }) {
-  const t = useTheme();
-  const router = useRouter();
-  return (
-    <Card style={{ marginTop: spacing.xl, backgroundColor: t.surfaceAlt, borderColor: 'transparent' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <Ionicons name="wallet-outline" size={15} color={t.textSecondary} />
-        <Text style={{ fontSize: 12.5, fontWeight: '600', color: t.textSecondary }}>{what}在「完美校园」里</Text>
-      </View>
-      <Text style={{ fontSize: 11.5, color: t.textTertiary, lineHeight: 18, marginTop: 8 }}>
-        真实余额和充值都在完美校园（新开普）里。它的接口没有公开文档、App 还带加固（检测到代理/证书会直接拒登录），
-        微信里的一卡通又走微信私有通道，所以这里暂时只能用演示数据。为什么接不了，点下面看详细原因。
-      </Text>
-      <GhostButton
-        label="为什么接不了完美校园"
-        icon="help-circle-outline"
-        onPress={() => router.push('/perfectcampus')}
-        style={{ marginTop: 12 }}
-      />
-    </Card>
-  );
-}
-
-function DataNote({ text }: { text?: string }) {
+function DataNote({ text }: { text: string }) {
   const t = useTheme();
   return (
     <Card style={{ marginTop: spacing.xl, backgroundColor: t.surfaceAlt, borderColor: 'transparent' }}>
@@ -476,47 +312,7 @@ function DataNote({ text }: { text?: string }) {
         <Ionicons name="information-circle-outline" size={15} color={t.textSecondary} />
         <Text style={{ fontSize: 12.5, fontWeight: '600', color: t.textSecondary }}>数据说明</Text>
       </View>
-      <Text style={{ fontSize: 11.5, color: t.textTertiary, lineHeight: 18, marginTop: 8 }}>
-        {text ??
-          '当前展示的是本地演示数据，用于预览界面与交互。真实数据需要接入四川农业大学相关系统：统一身份认证 auth.sicau.edu.cn（川农e认证，CAS）、教务处 jiaowu.sicau.edu.cn、一卡通与后勤平台。接入方式见项目文档 docs/sicau-api.md。'}
-      </Text>
-    </Card>
-  );
-}
-
-function ListRowCard({
-  icon,
-  title,
-  sub,
-  onPress,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  sub: string;
-  onPress: () => void;
-}) {
-  const t = useTheme();
-  return (
-    <Card onPress={onPress} style={{ paddingVertical: 15 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <View
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 12,
-            backgroundColor: t.primarySoft,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Ionicons name={icon} size={18} color={t.primary} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: t.text }}>{title}</Text>
-          <Text style={{ fontSize: 11, color: t.textTertiary, marginTop: 2 }}>{sub}</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={16} color={t.textTertiary} />
-      </View>
+      <Text style={{ fontSize: 11.5, color: t.textTertiary, lineHeight: 18, marginTop: 8 }}>{text}</Text>
     </Card>
   );
 }

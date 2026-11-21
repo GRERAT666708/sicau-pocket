@@ -118,46 +118,44 @@ export default function ScheduleScreen() {
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            marginTop: spacing.lg,
+            marginTop: spacing.sm + 2,
             backgroundColor: t.surface,
-            borderRadius: radius.md,
+            borderRadius: radius.pill,
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: t.border,
-            paddingHorizontal: 6,
-            paddingVertical: 6,
+            paddingHorizontal: 4,
+            paddingVertical: 3,
           }}
         >
-          <Pressable onPress={() => setWeek((w) => Math.max(1, w - 1))} style={navBtn} hitSlop={6}>
-            <Ionicons name="chevron-back" size={18} color={t.text} />
+          <Pressable onPress={() => setWeek((w) => Math.max(1, w - 1))} style={navBtnSmall} hitSlop={8}>
+            <Ionicons name="chevron-back" size={16} color={t.textSecondary} />
           </Pressable>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={{ fontSize: 15, fontWeight: '700', color: t.text }}>
-              第 {week} 周{week === thisWeek ? ' · 本周' : ''}
+          <Pressable
+            onPress={() => week !== thisWeek && setWeek(thisWeek)}
+            style={{ flex: 1, flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 6 }}
+          >
+            <Text style={{ fontSize: 14, fontWeight: '700', color: t.text }}>
+              第 {week} 周
             </Text>
-            <Text style={{ fontSize: 11, color: t.textTertiary, marginTop: 1 }}>
-              {formatMD(dates[0])} ~ {formatMD(dates[6])}
+            <Text style={{ fontSize: 11, color: t.textTertiary }} numberOfLines={1}>
+              {formatMD(dates[0])} ~ {formatMD(dates[6])} · {total} 节
             </Text>
-          </View>
-          <Pressable onPress={() => setWeek((w) => Math.min(settings.totalWeeks, w + 1))} style={navBtn} hitSlop={6}>
-            <Ionicons name="chevron-forward" size={18} color={t.text} />
+            {week !== thisWeek ? (
+              <Ionicons name="today-outline" size={12} color={t.primary} />
+            ) : null}
           </Pressable>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-          <Text style={{ fontSize: 12, color: t.textTertiary }}>本周 {total} 节课</Text>
-          {week !== thisWeek ? (
-            <Pressable onPress={() => setWeek(thisWeek)} style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-              <Ionicons name="today-outline" size={13} color={t.primary} />
-              <Text style={{ fontSize: 12, color: t.primary, fontWeight: '600' }}>回到本周</Text>
-            </Pressable>
-          ) : (
-            <Text style={{ fontSize: 12, color: t.textTertiary }}>一周一览</Text>
-          )}
+          <Pressable
+            onPress={() => setWeek((w) => Math.min(settings.totalWeeks, w + 1))}
+            style={navBtnSmall}
+            hitSlop={8}
+          >
+            <Ionicons name="chevron-forward" size={16} color={t.textSecondary} />
+          </Pressable>
         </View>
       </View>
 
       <ScrollView
-        style={{ flex: 1, marginTop: 10 }}
+        style={{ flex: 1, marginTop: 6 }}
         contentContainerStyle={{ paddingBottom: 130 }}
         showsVerticalScrollIndicator={false}
       >
@@ -166,7 +164,7 @@ export default function ScheduleScreen() {
           icon="calendar-outline"
           title="看课表前先知道三件事"
           points={[
-            '一屏一周，顶部「第 N 周」可以来回翻，右边「回到本周」随时跳回',
+            '一屏一周：左右箭头翻周，点一下中间的周次就能跳回本周',
             '单双周的课只在对应周出现，非本周的课是灰色虚线占位',
             '连排的课会自动合并成一块，点课程块能看到教室、老师和周次',
           ]}
@@ -412,6 +410,14 @@ const navBtn = {
   width: 34,
   height: 34,
   borderRadius: 10,
+  alignItems: 'center',
+  justifyContent: 'center',
+} as const;
+
+const navBtnSmall = {
+  width: 30,
+  height: 30,
+  borderRadius: radius.pill,
   alignItems: 'center',
   justifyContent: 'center',
 } as const;

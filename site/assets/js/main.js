@@ -23,6 +23,34 @@
     }
   }
 
+  // 安装包换成带版本号的文件名：固定名 latest 容易被浏览器/运营商缓存成旧包
+  fetch('/app/version.json', { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (v) {
+      if (!v || !v.version) return;
+      var url = '/apk/sicau-pocket-' + v.version + '.apk';
+      var links = document.querySelectorAll('[data-dl], a[href$="/apk/sicau-pocket-latest.apk"]');
+      // 服务器可能只传了 latest（SKIP_APK=1 或还没跑新脚本），先探一下带版本号的文件在不在
+      fetch(url, { method: 'HEAD', cache: 'no-store' })
+        .then(function (r) {
+          if (!r.ok) return;
+          links.forEach(function (el) {
+            el.setAttribute('href', url);
+          });
+        })
+        .catch(function () { /* 探测失败就保持 latest */ });
+      document.querySelectorAll('[data-app-version]').forEach(function (el) {
+        el.textContent = 'v' + v.version;
+      });
+      var size = document.querySelectorAll('[data-app-size]');
+      if (v.size) {
+        size.forEach(function (el) {
+          el.textContent = '约 ' + Math.round(v.size / 1048576) + ' MB';
+        });
+      }
+    })
+    .catch(function () { /* 拿不到版本号就用 latest 兜底 */ });
+
   // 下载计数只在本地提示，不做任何埋点
   document.querySelectorAll('[data-dl]').forEach(function (el) {
     el.addEventListener('click', function () {

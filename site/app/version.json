@@ -1,15 +1,17 @@
 {
-  "version": "0.10.22",
-  "versionCode": 32,
-  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.22.apk",
+  "version": "0.10.23",
+  "versionCode": 33,
+  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.23.apk",
   "fallbackUrl": "https://sicau-pocket.com/download.html",
-  "size": 48844037,
-  "sha256": "a1e43ab0fbdee06e60c3b7dbec9dd1464b5faf5f2be89bffde2280ebfe70df32",
-  "md5": "2a6a1828eee83b394152afaebe60a667",
-  "releasedAt": "2026-11-19",
-  "minimumVersionCode": 31,
+  "size": 49571028,
+  "sha256": "9143374e9fe7e5135b3170cd38e5caf83bd0d1ef62d9089303a9dd55be3e1c9a",
+  "md5": "a9062a775829d60457e8317f42d60651",
+  "releasedAt": "2026-11-21",
+  "minimumVersionCode": 32,
   "notes": [
-    "课表可以「分享成 .ics」：发到微信 / QQ / 邮箱，对方点开就能加进自己的日历（周次、单双周、上课提醒都在）。",
-    "更新后第一次打开会弹一张小卡片，告诉你这次改了什么；点「知道了」后不再出现，首次安装不弹。"
+    "- 上课提醒：可设提前 5 / 10 / 15 / 20 / 30 分钟，只在手机本地排通知，不联网",
+    "- 小组件数据在后台也会更新（系统每 15~60 分钟唤醒一次，不再只在打开 App 时刷新）",
+    "- 删掉几处遗留的演示数据和死代码，包体没变胖",
+    "- 深色 / 浅色下次级文字调亮了一档，灰字看得清了"
   ]
 }

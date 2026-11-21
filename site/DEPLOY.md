@@ -127,9 +127,9 @@ curl -sI http://sicau-pocket.com/ | grep -i location
    cp ../sicau-pocket-v0.10.16-arm64.apk site/apk/sicau-pocket-latest.apk
    ```
 
-3. 改这三处版本号/更新说明：
-   - `index.html`：`pill` 里的版本号、`meta-line` 里的 `v0.10.16`
-   - `download.html`：顶部版本行 + 「更新说明」表格加一行
+3. 改版本号与更新说明：
+   - 版本号不用手改：`node scripts/bump-version.mjs patch` 会同步 `app.json`、`lib/version.ts`、`index.html` / `download.html` 的版本文案
+   - `download.html` 的「更新说明」表格加一行（`lib/changelog.ts` 也加一段，App 内「更新完成」小窗用它）
    - `privacy.html` / `terms.html` 若规则有变动，更新"生效日期"
 4. 上传：
 
@@ -141,7 +141,33 @@ curl -sI http://sicau-pocket.com/ | grep -i location
 
 5. 在 CDN 控制台**刷新**：`/`、`/download.html`、`/apk/sicau-pocket-latest.apk`（URL 刷新）
 
-> 想要"固定版本号可回溯"的话，可以同时保留 `/apk/sicau-pocket-v0.10.16-arm64.apk`，让 `latest` 指向新文件。
+> 下载页的按钮会在页面加载后把链接改成 `/apk/sicau-pocket-<版本>.apk`（`assets/js/main.js` 读 `app/version.json`），
+> 所以带版本号的文件必须一起传上去；`latest` 只是兜底，nginx 对 `latest` 强制 `no-cache`，带版本号的文件才长缓存。
+>
+> **不用 OSS、直接用 ECS + nginx 的情况**：跑 `bash /root/pull.sh sicau-pocket.com`
+> （= `site/deploy/pull-and-deploy.sh`），它会按 `version.json` 的 md5 校验 `apk/sicau-pocket-latest.apk`，
+> 对不上就强制重下，并在自检里打印「站点包 vs version.json」的 md5 对比。
+
+## 5.1 网站包与 GitHub 对齐自检
+
+发完版在服务器上跑一遍，三行都应输出**同一个 md5**：
+
+```bash
+# 站点清单里写的 md5
+sed -n 's/.*"md5": *"\([0-9a-f]\{32\}\).*/\1/p' /var/www/sicau-pocket/app/version.json
+# 站点上 latest 的 md5
+md5sum /var/www/sicau-pocket/apk/sicau-pocket-latest.apk | cut -d' ' -f1
+# GitHub Release 上那个包的 md5（先下到/tmp）
+curl -fL -o /tmp/gh.apk https://github.com/GRERAT666708/sicau-pocket/releases/download/vX.Y.Z/sicau-pocket-vX.Y.Z-arm64.apk
+md5sum /tmp/gh.apk | cut -d' ' -f1
+```
+
+对不上时按顺序排查：
+
+1. `app/version.json` 是不是最新（`bash /root/pull.sh` 有没有真的拉到新 commit）
+2. `/var/www/sicau-pocket/apk/.apk-version` 与实际文件是否一致（老脚本只看这个标记，会误跳过下载；新脚本会校验 md5）
+3. 浏览器是不是缓存了 `latest`（新版 nginx 已对 `latest` 设 `no-cache`，下载页也已改用带版本号的文件名）
+4. 服务器上是不是留着多个版本文件（新脚本只保留最近两个）
 
 ## 6. 给 App Store 用的三个链接
 

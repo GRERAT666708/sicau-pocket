@@ -36,6 +36,19 @@ else
   fi
 fi
 
+VERSION="$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$SITE_DIR/app/version.json" | head -1)"
+WANT_MD5="$(sed -n 's/.*"md5": *"\([0-9a-f]\{32\}\)".*/\1/p' "$SITE_DIR/app/version.json" | head -1)"
+if [[ "$SKIP_APK" != "1" && -n "$WANT_MD5" ]]; then
+  GOT_MD5="$(md5sum "$SITE_DIR/apk/sicau-pocket-latest.apk" | cut -d' ' -f1)"
+  if [[ "$GOT_MD5" != "$WANT_MD5" ]]; then
+    echo "✗ 本地 apk/sicau-pocket-latest.apk 与 version.json（v$VERSION）对不上" >&2
+    echo "  本地 md5=$GOT_MD5  期望=$WANT_MD5" >&2
+    echo "  请先执行：cp ../sicau-pocket-v$VERSION-arm64.apk site/apk/sicau-pocket-latest.apk" >&2
+    exit 1
+  fi
+  cp -f "$SITE_DIR/apk/sicau-pocket-latest.apk" "$SITE_DIR/apk/sicau-pocket-$VERSION.apk"
+fi
+
 echo "→ 1/3 同步文件…"
 rsync -avz --delete "${RSYNC_FILTER[@]+"${RSYNC_FILTER[@]}"}" "$SITE_DIR/" "$HOST:$DIR/"
 
@@ -71,8 +84,10 @@ systemctl reload nginx
 echo "  ✓ nginx 已重载"
 
 if [ -f "\$DIR/apk/sicau-pocket-latest.apk" ]; then
-  echo "  · APK: \$(du -h "\$DIR/apk/sicau-pocket-latest.apk" | cut -f1)"
+  echo "  · APK: \$(du -h "\$DIR/apk/sicau-pocket-latest.apk" | cut -f1) · md5 \$(md5sum "\$DIR/apk/sicau-pocket-latest.apk" | cut -d' ' -f1)"
 fi
+# 只保留最近两个版本化文件
+ls -1t "\$DIR"/apk/sicau-pocket-[0-9]*.apk 2>/dev/null | tail -n +3 | while read -r f; do rm -f "\$f"; done
 EOF
 
 echo "→ 3/3 自检"

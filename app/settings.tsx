@@ -13,6 +13,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { campusSourceText, effectiveCampus } from '@/lib/campusState';
 import { APP_VERSION } from '@/lib/version';
 import { exportIcs, shareIcs } from '@/lib/ics';
+import { DEFAULT_REMINDER_LEAD, REMINDER_LEADS, ensureReminderPermission, pendingReminderCount, syncClassReminders } from '@/lib/reminders';
 
 const THEMES: { key: 'system' | 'light' | 'dark'; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { key: 'system', label: '跟随系统', icon: 'phone-portrait-outline' },
@@ -28,6 +29,8 @@ export default function SettingsScreen() {
   const [icsBusy, setIcsBusy] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
   const [icsNotice, setIcsNotice] = useState<string | null>(null);
+  const [reminderNotice, setReminderNotice] = useState<string | null>(null);
+  const [reminderBusy, setReminderBusy] = useState(false);
   const campus = effectiveCampus(settings);
   const byMajorCampus = settings.major ? campusOfMajor(settings.major) : null;
   const [confirm, setConfirm] = useState<null | 'courses' | 'sessions' | 'all'>(null);
@@ -263,6 +266,107 @@ export default function SettingsScreen() {
               </Pressable>
             ))}
           </View>
+        </Card>
+
+        <View style={{ height: spacing.xl }} />
+        <SectionTitle title="上课提醒" />
+        <Card>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flex: 1, paddingRight: 10 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: t.text }}>课前提醒</Text>
+              <Text style={{ fontSize: 11, color: t.textTertiary, marginTop: 3, lineHeight: 17 }}>
+                在手机本地排通知，不联网、不上传课表。手机重启或长时间没打开 App 后，开一次 App 会自动补排。
+              </Text>
+            </View>
+            <Switch
+              value={settings.classReminder === true}
+              onValueChange={async (v) => {
+                if (!v) {
+                  actions.updateSettings({ classReminder: false });
+                  setReminderNotice('已关闭，之前排的通知也清掉了。');
+                  return;
+                }
+                setReminderBusy(true);
+                const granted = await ensureReminderPermission();
+                setReminderBusy(false);
+                if (!granted) {
+                  setReminderNotice('系统没给通知权限，去「设置 → 应用 → 川农口袋 → 通知」里允许后再来打开。');
+                  return;
+                }
+                actions.updateSettings({ classReminder: true });
+                const res = await syncClassReminders(courses, { ...settings, classReminder: true });
+                setReminderNotice(
+                  res.ok
+                    ? `已开启，提前 ${res.lead} 分钟提醒，排了 ${res.scheduled} 条，覆盖未来两周。`
+                    : '开启失败，稍后再试一次。',
+                );
+              }}
+              trackColor={{ true: t.primary, false: t.border }}
+            />
+          </View>
+
+          <Text style={{ fontSize: 11.5, color: t.textTertiary, marginTop: 14 }}>提前多久提醒</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+            {REMINDER_LEADS.map((n) => {
+              const active = (settings.classReminderLead ?? DEFAULT_REMINDER_LEAD) === n;
+              return (
+                <Pressable
+                  key={n}
+                  onPress={async () => {
+                    actions.updateSettings({ classReminderLead: n });
+                    if (settings.classReminder) {
+                      const res = await syncClassReminders(courses, {
+                        ...settings,
+                        classReminderLead: n,
+                      });
+                      if (res.ok) setReminderNotice(`已改成提前 ${n} 分钟，重新排了 ${res.scheduled} 条。`);
+                    }
+                  }}
+                  style={{
+                    paddingHorizontal: 14,
+                    paddingVertical: 8,
+                    borderRadius: radius.sm,
+                    alignItems: 'center',
+                    backgroundColor: active ? t.primary : t.surfaceAlt,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: '600',
+                      color: active ? t.onPrimary : t.textSecondary,
+                    }}
+                  >
+                    {n} 分钟
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <Pressable
+            onPress={async () => {
+              setReminderBusy(true);
+              const count = await pendingReminderCount();
+              setReminderBusy(false);
+              setReminderNotice(
+                count > 0
+                  ? `现在手机里排着 ${count} 条提醒，会在对应时间弹出。`
+                  : '现在没有排上的提醒：确认开关已打开、课表不是空的、开学日期填对了。',
+              );
+            }}
+            style={{ marginTop: 12 }}
+          >
+            <Text style={{ fontSize: 12, color: t.primary, fontWeight: '600' }}>
+              {reminderBusy ? '检查中…' : '检查已排的提醒'}
+            </Text>
+          </Pressable>
+
+          {reminderNotice ? (
+            <Text style={{ fontSize: 11.5, color: t.textSecondary, marginTop: 10, lineHeight: 17 }}>
+              {reminderNotice}
+            </Text>
+          ) : null}
         </Card>
 
         <View style={{ height: spacing.xl }} />
