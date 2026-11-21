@@ -15,6 +15,7 @@ import { effectiveCampus } from '@/lib/campusState';
 import { useTheme } from '@/hooks/useTheme';
 import { AppBackground } from '@/components/AppBackground';
 import { GlassPressable } from '@/components/Glass';
+import { Reveal } from '@/components/motion';
 
 const ROUTES: Record<string, Href> = {
   grades: '/grades',
@@ -87,7 +88,9 @@ export default function MeScreen() {
       contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: spacing.lg, paddingBottom: 130 }}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={{ fontSize: 24, fontWeight: '700', color: t.text }}>我的</Text>
+      <Reveal index={0}>
+        <Text style={{ fontSize: 24, fontWeight: '700', color: t.text }}>我的</Text>
+      </Reveal>
 
       {showUpdate ? (
         <GlassPressable
@@ -207,6 +210,7 @@ export default function MeScreen() {
         </View>
       </LinearGradient>
 
+      <Reveal index={1}>
       <View style={{ marginTop: spacing.lg }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
           <Ionicons name="sparkles-outline" size={13} color={t.textTertiary} />
@@ -245,6 +249,9 @@ export default function MeScreen() {
         </View>
       </View>
 
+      </Reveal>
+
+      <Reveal index={2}>
       <View style={{ marginTop: spacing.xl }}>
         <SectionTitle title="设置" />
         <Card style={{ paddingVertical: 2, paddingHorizontal: 16 }}>
@@ -276,6 +283,7 @@ export default function MeScreen() {
       <Text style={{ textAlign: 'center', fontSize: 11, color: t.textTertiary, marginTop: spacing.xl }}>
         {`川农口袋 v${APP_VERSION} · 四川农业大学校园助手`}
       </Text>
+      </Reveal>
     </ScrollView>
   );
 }

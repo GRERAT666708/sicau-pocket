@@ -8,6 +8,7 @@ import { AppBackground } from '@/components/AppBackground';
 import { GlassPressable } from '@/components/Glass';
 import { Badge, Card, SectionTitle } from '@/components/UIKit';
 import { GuideCard } from '@/components/GuideCard';
+import { Reveal } from '@/components/motion';
 import { courseColors, radius, spacing } from '@/constants/theme';
 import { formatCN, greeting, dayIndex, nowMinutes, weekdayCN, fmtHM } from '@/lib/date';
 import { periodEnd, periodStart, periodRangeText } from '@/lib/periods';
@@ -117,6 +118,7 @@ export default function TodayScreen() {
         contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 130 }}
         showsVerticalScrollIndicator={false}
       >
+        <Reveal index={0}>
         <GuideCard
           id="today"
           icon="sunny-outline"
@@ -127,6 +129,8 @@ export default function TodayScreen() {
             '课表不准就去「课表 → 导入」，第一次用建议先导入自己的教务课表',
           ]}
         />
+        </Reveal>
+        <Reveal index={1}>
         <Card style={{ padding: 18 }}>
           {status.kind === 'class' ? (
             <>
@@ -210,7 +214,9 @@ export default function TodayScreen() {
             </>
           )}
         </Card>
+        </Reveal>
 
+        <Reveal index={2}>
         <View style={{ flexDirection: 'row', gap: 10, marginTop: spacing.lg }}>
           {QUICK.map((q) => (
             <GlassPressable
@@ -243,7 +249,10 @@ export default function TodayScreen() {
         </View>
 
 
+        </Reveal>
+
         {/* 宿舍电费：数据来自「校园卡」页里的电费充值，房间记忆后自动带出 */}
+        <Reveal index={3}>
         <View style={{ marginTop: spacing.lg }}>
           <GlassPressable
             onPress={() => router.push((ecard ? '/ecard?elepay=1' : '/ecard') as never)}
@@ -284,6 +293,9 @@ export default function TodayScreen() {
           </GlassPressable>
         </View>
 
+        </Reveal>
+
+        <Reveal index={4}>
         <View style={{ marginTop: spacing.xl }}>
           <SectionTitle
             title="今日日程"
@@ -354,6 +366,9 @@ export default function TodayScreen() {
           )}
         </View>
 
+        </Reveal>
+
+        <Reveal index={5}>
         <View style={{ flexDirection: 'row', gap: 10, marginTop: spacing.md }}>
           <Card style={{ flex: 1, paddingVertical: 16 }}>
             <Text style={{ fontSize: 11.5, color: t.textTertiary }}>今日专注</Text>
@@ -372,6 +387,7 @@ export default function TodayScreen() {
             <Text style={{ fontSize: 11, color: t.textTertiary, marginTop: 4 }}>本周 {stats.weekMinutes} 分钟</Text>
           </Card>
         </View>
+        </Reveal>
       </ScrollView>
     </AppBackground>
   );

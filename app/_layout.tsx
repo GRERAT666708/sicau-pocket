@@ -13,6 +13,7 @@ import { startNotificationTapRouting } from '@/lib/reminders';
 import { md5SelfTestEnabled, runMd5SelfTest } from '@/lib/selfTest';
 import { takeWhatsNew, type WhatsNewInfo } from '@/lib/whatsNew';
 import { WhatsNewModal } from '@/components/WhatsNew';
+import { stackTransition } from '@/components/motion';
 import { useTheme } from '@/hooks/useTheme';
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -79,7 +80,7 @@ export default function RootLayout() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: t.bg },
-          animation: 'slide_from_right',
+          ...stackTransition,
         }}
       >
         <Stack.Screen name="(tabs)" />

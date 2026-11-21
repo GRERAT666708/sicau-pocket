@@ -1,17 +1,17 @@
 {
-  "version": "0.10.23",
-  "versionCode": 33,
-  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.23.apk",
+  "version": "0.10.28",
+  "versionCode": 38,
+  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.28.apk",
   "fallbackUrl": "https://sicau-pocket.com/download.html",
-  "size": 49571028,
-  "sha256": "9143374e9fe7e5135b3170cd38e5caf83bd0d1ef62d9089303a9dd55be3e1c9a",
-  "md5": "a9062a775829d60457e8317f42d60651",
+  "size": 50474200,
+  "sha256": "0a91acbb1203329dad5abe6bb8017aad5045b252b001a70224c987d11c2ce825",
+  "md5": "f087350d2d486d830e28fc39ed1c4088",
   "releasedAt": "2026-11-21",
-  "minimumVersionCode": 32,
+  "minimumVersionCode": 33,
   "notes": [
-    "- 上课提醒：可设提前 5 / 10 / 15 / 20 / 30 分钟，只在手机本地排通知，不联网",
-    "- 小组件数据在后台也会更新（系统每 15~60 分钟唤醒一次，不再只在打开 App 时刷新）",
-    "- 删掉几处遗留的演示数据和死代码，包体没变胖",
-    "- 深色 / 浅色下次级文字调亮了一档，灰字看得清了"
+    "交互动效：切 tab 有弹簧滑块、页面元素逐条淡入、翻周时课表轻横移（系统开启「减少动态效果」自动关闭）。",
+    "课表每节格纵向加高、字号放大一号，连排课的课名 / 教室 / 老师三行完整显示。",
+    "底部滑块按内容宽度居中，修正偏左问题。",
+    "一次性合并 v0.10.24–v0.10.27 的全部改动。"
   ]
 }
