@@ -2,6 +2,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Animated, Platform, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 
 import { radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
@@ -94,19 +95,34 @@ export function GlassPressable({
   contentStyle?: StyleProp<ViewStyle>;
   disabled?: boolean;
 }) {
+  const t = useTheme();
   const scale = React.useRef(new Animated.Value(1)).current;
   const glow = React.useRef(new Animated.Value(0)).current;
   const ripple = React.useRef(new Animated.Value(0)).current;
-  const [point, setPoint] = React.useState({ x: 120, y: 60, id: 0 });
+  const [point, setPoint] = React.useState({ x: 0, y: 0, id: 0 });
+  const [box, setBox] = React.useState({ w: 0, h: 0 });
+  const [diameter, setDiameter] = React.useState(160);
+  const dark = t.scheme === 'dark';
+  const gradId = React.useId().replace(/:/g, '');
 
   const pressIn = (e: any) => {
     const { locationX, locationY } = e?.nativeEvent ?? {};
-    setPoint((p) => ({ x: locationX ?? p.x, y: locationY ?? p.y, id: p.id + 1 }));
+    const x = locationX ?? box.w / 2;
+    const y = locationY ?? box.h / 2;
+    // 涟漪从触点扩散到最远的那个角，半径才能刚好盖住整张卡
+    const far = Math.max(
+      Math.hypot(x, y),
+      Math.hypot(box.w - x, y),
+      Math.hypot(x, box.h - y),
+      Math.hypot(box.w - x, box.h - y),
+    );
+    setDiameter(Math.max(120, Math.round(far * 2)));
+    setPoint((p) => ({ x, y, id: p.id + 1 }));
     ripple.setValue(0);
     Animated.parallel([
       Animated.spring(scale, { toValue: 0.965, useNativeDriver: true, speed: 45, bounciness: 0 }),
       Animated.timing(glow, { toValue: 1, duration: 110, useNativeDriver: true }),
-      Animated.timing(ripple, { toValue: 1, duration: 520, useNativeDriver: true }),
+      Animated.timing(ripple, { toValue: 1, duration: 620, useNativeDriver: true }),
     ]).start();
   };
 
@@ -121,13 +137,27 @@ export function GlassPressable({
     <Animated.View style={[{ transform: [{ scale }] }, style]}>
       <Pressable onPress={onPress} onPressIn={pressIn} onPressOut={pressOut} disabled={disabled}>
         <GlassSurface radiusValue={radiusValue} intensity={intensity} strong={strong}>
+          <View
+            pointerEvents="none"
+            style={StyleSheet.absoluteFill}
+            onLayout={(e) => {
+              const { width, height } = e.nativeEvent.layout;
+              if (Math.abs(width - box.w) > 1 || Math.abs(height - box.h) > 1) {
+                setBox({ w: width, h: height });
+              }
+            }}
+          />
           <View style={contentStyle}>{children}</View>
           <Animated.View
             pointerEvents="none"
             style={[StyleSheet.absoluteFill, { opacity: glow }]}
           >
             <LinearGradient
-              colors={['rgba(255,255,255,0.30)', 'rgba(255,255,255,0.04)', 'transparent']}
+              colors={
+                dark
+                  ? ['rgba(255,255,255,0.14)', 'rgba(255,255,255,0.03)', 'transparent']
+                  : ['rgba(255,255,255,0.30)', 'rgba(255,255,255,0.04)', 'transparent']
+              }
               style={StyleSheet.absoluteFill}
             />
           </Animated.View>
@@ -136,18 +166,30 @@ export function GlassPressable({
             pointerEvents="none"
             style={{
               position: 'absolute',
-              left: point.x - 110,
-              top: point.y - 110,
-              width: 220,
-              height: 220,
-              borderRadius: 110,
-              backgroundColor: 'rgba(255,255,255,0.55)',
-              opacity: ripple.interpolate({ inputRange: [0, 0.25, 1], outputRange: [0, 0.45, 0] }),
+              left: point.x - diameter / 2,
+              top: point.y - diameter / 2,
+              width: diameter,
+              height: diameter,
+              opacity: ripple.interpolate({
+                inputRange: [0, 0.18, 1],
+                outputRange: [0, dark ? 0.16 : 0.36, 0],
+              }),
               transform: [
-                { scale: ripple.interpolate({ inputRange: [0, 1], outputRange: [0.25, 1.6] }) },
+                { scale: ripple.interpolate({ inputRange: [0, 1], outputRange: [0.35, 1] }) },
               ],
             }}
-          />
+          >
+            <Svg width={diameter} height={diameter}>
+              <Defs>
+                <RadialGradient id={gradId} cx="50%" cy="50%" r="50%">
+                  <Stop offset="0" stopColor="#FFFFFF" stopOpacity={dark ? 0.42 : 0.8} />
+                  <Stop offset="0.55" stopColor="#FFFFFF" stopOpacity={dark ? 0.16 : 0.32} />
+                  <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
+                </RadialGradient>
+              </Defs>
+              <Circle cx={diameter / 2} cy={diameter / 2} r={diameter / 2} fill={`url(#${gradId})`} />
+            </Svg>
+          </Animated.View>
         </GlassSurface>
       </Pressable>
     </Animated.View>

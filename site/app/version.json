@@ -1,17 +1,16 @@
 {
-  "version": "0.10.28",
-  "versionCode": 38,
-  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.28.apk",
+  "version": "0.10.39",
+  "versionCode": 49,
+  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.39.apk",
   "fallbackUrl": "https://sicau-pocket.com/download.html",
-  "size": 50474200,
-  "sha256": "0a91acbb1203329dad5abe6bb8017aad5045b252b001a70224c987d11c2ce825",
-  "md5": "f087350d2d486d830e28fc39ed1c4088",
-  "releasedAt": "2026-11-21",
+  "size": 50476104,
+  "sha256": "28fd1757946dc997a03d0c24f8ed463854feb014b8819b9c869f7a280ac265ad",
+  "md5": "5e292667a940f172b470bf2f3bdb83cc",
+  "releasedAt": "2026-11-22",
   "minimumVersionCode": 33,
   "notes": [
-    "交互动效：切 tab 有弹簧滑块、页面元素逐条淡入、翻周时课表轻横移（系统开启「减少动态效果」自动关闭）。",
-    "课表每节格纵向加高、字号放大一号，连排课的课名 / 教室 / 老师三行完整显示。",
-    "底部滑块按内容宽度居中，修正偏左问题。",
-    "一次性合并 v0.10.24–v0.10.27 的全部改动。"
+    "首页头部改成视差滚动：往下滑时绿色那块比内容走得慢，问候语淡出，卡片从绿色上滑过去。绿色本身渐隐到透明，不再有硬接缝。",
+    "修复深色模式按下服务卡时闪出的白色大圆：现在改成贴着卡片、从触点漾开的柔光。",
+    "合并 v0.10.29–v0.10.38 的全部调整（含动效、课表行高、底部滑块居中、上课提醒、后台刷新）。"
   ]
 }

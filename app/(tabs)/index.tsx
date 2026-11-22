@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppBackground } from '@/components/AppBackground';
 import { GlassPressable } from '@/components/Glass';
@@ -32,6 +32,20 @@ export default function TodayScreen() {
   const { settings, courses, sessions, user } = useAppState();
   const [now, setNow] = useState(() => new Date());
   const [ecard, setEcard] = useState<EcardBinding | null>(null);
+  const [headerH, setHeaderH] = useState(300);
+  const scrollY = React.useRef(new Animated.Value(0)).current;
+  // 头部跟着页面走，但只走 45% 的距离 —— 形成视差
+  const headerShift = scrollY.interpolate({
+    inputRange: [0, 320],
+    outputRange: [0, -116],
+    extrapolate: 'clamp',
+  });
+  // 头部文字在往上走的同时淡出，避免和卡片/状态栏挤在一起
+  const headerTextFade = scrollY.interpolate({
+    inputRange: [0, 95],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -59,18 +73,26 @@ export default function TodayScreen() {
 
   return (
     <AppBackground>
-      <LinearGradient
-        colors={[t.primary, t.primaryDark]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      <Animated.View
+        onLayout={(e) => {
+          const h = e.nativeEvent.layout.height;
+          if (Math.abs(h - headerH) > 1) setHeaderH(h);
+        }}
         style={{
-          paddingTop: insets.top + 14,
-          paddingHorizontal: 18,
-          paddingBottom: 64,
-          borderBottomLeftRadius: 30,
-          borderBottomRightRadius: 30,
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: 0,
+          transform: [{ translateY: headerShift }],
         }}
       >
+      <View style={{ paddingTop: insets.top + 14, paddingHorizontal: 18, paddingBottom: 92 }}>
+        <LinearGradient
+          colors={[t.primary, t.primaryDark, `${t.primaryDark}E6`, `${t.primaryDark}00`]}
+          locations={[0, 0.42, 0.7, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+        <Animated.View style={{ opacity: headerTextFade }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View
@@ -105,17 +127,31 @@ export default function TodayScreen() {
           </View>
         </View>
 
-        <Text style={{ color: '#fff', fontSize: 23, fontWeight: '700', marginTop: 20, letterSpacing: 0.2 }}>
-          {greeting(now)}，{settings.userName || user?.name ? `${settings.userName || user?.name}同学` : '同学'}
-        </Text>
-        <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12.5, marginTop: 7 }}>
-          {formatCN(now)} {weekdayCN(now)} · 第 {week} 教学周
-        </Text>
-      </LinearGradient>
+        <View>
+          <Text style={{ color: '#fff', fontSize: 23, fontWeight: '700', marginTop: 20, letterSpacing: 0.2 }}>
+            {greeting(now)}，{settings.userName || user?.name ? `${settings.userName || user?.name}同学` : '同学'}
+          </Text>
+          <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12.5, marginTop: 7 }}>
+            {formatCN(now)} {weekdayCN(now)} · 第 {week} 教学周
+          </Text>
+        </View>
+        </Animated.View>
+        {/* 绿色自身在底部渐隐到透明，直接露出页面底色，不需要再叠一层底色渐变 */}
 
-      <ScrollView
-        style={{ flex: 1, marginTop: -46 }}
-        contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 130 }}
+      </View>
+      </Animated.View>
+
+      <Animated.ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingTop: Math.max(80, headerH - 34),
+          paddingHorizontal: spacing.lg,
+          paddingBottom: 130,
+        }}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          useNativeDriver: true,
+        })}
+        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
       >
         <Reveal index={0}>
@@ -388,7 +424,7 @@ export default function TodayScreen() {
           </Card>
         </View>
         </Reveal>
-      </ScrollView>
+      </Animated.ScrollView>
     </AppBackground>
   );
 }
