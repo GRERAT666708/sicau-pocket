@@ -222,6 +222,8 @@ footer { border-top: 1px solid var(--line); background: var(--bg-soft); padding:
 .foot-col a, .foot-col p { display: block; color: var(--ink-700); font-size: 14px; margin: 5px 0; }
 .foot-bottom { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--ink-300); font-size: 12.8px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
 .foot-bottom a { color: var(--ink-300); }
+.foot-bottom a.gongan { display: inline-flex; align-items: center; gap: 5px; }
+.foot-bottom a.gongan img { display: block; width: 20px; height: 22px; opacity: .92; }
 
 .center { text-align: center; }
 .muted { color: var(--ink-500); }
