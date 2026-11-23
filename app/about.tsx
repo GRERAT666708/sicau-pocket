@@ -188,16 +188,6 @@ export default function AboutScreen() {
               subtitle="网站备案 · 点这里到工信部备案系统核验"
               onPress={() => Linking.openURL('https://beian.miit.gov.cn/').catch(() => {})}
             />
-            <ListRow
-              icon="shield-checkmark-outline"
-              title="川公网安备51010702045039号"
-              subtitle="公安联网备案 · 点这里到公安部备案查询核验"
-              onPress={() =>
-                Linking.openURL('https://beian.mps.gov.cn/#/query/webSearch?code=51010702045039').catch(
-                  () => {},
-                )
-              }
-            />
           </Card>
         </View>
 
