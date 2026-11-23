@@ -91,5 +91,67 @@
     }, { rootMargin: '-20% 0px -70% 0px' });
     heads.forEach(function (h) { io.observe(h); });
   }
+
+  // ---------- 动效：A 入场 / B 导航收窄（E 在 CSS 里） ----------
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // B：滚过 40px 后给导航加 is-scrolled（收窄 + 加深阴影）
+  var nav = document.querySelector('.nav');
+  if (nav) {
+    var lastState = false;
+    var onScroll = function () {
+      var next = window.scrollY > 40;
+      if (next !== lastState) {
+        lastState = next;
+        nav.classList.toggle('is-scrolled', next);
+      }
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+
+  // A：视口外的区块先藏起来，滚进来再淡入；同组元素按 60ms 递增
+  if (!reduceMotion && 'IntersectionObserver' in window) {
+    var groups = [
+      '.section-head',
+      '.card',
+      '.shots',
+      '.privacy-box > *',
+      '.dl-card',
+      '.steps li',
+      '.doc h2',
+      '.note',
+      '.faq'
+    ];
+    var targets = [];
+    groups.forEach(function (sel) {
+      document.querySelectorAll(sel).forEach(function (el) {
+        targets.push(el);
+      });
+    });
+
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    var watch = [];
+    targets.forEach(function (el) {
+      // 首屏内的元素不动，避免打开页面时闪一下
+      if (el.getBoundingClientRect().top < vh * 0.86) return;
+      var parent = el.parentElement;
+      var idx = parent ? Array.prototype.indexOf.call(parent.children, el) : 0;
+      el.style.setProperty('--rv-d', Math.min(idx, 5) * 60 + 'ms');
+      el.classList.add('rv');
+      watch.push(el);
+    });
+
+    if (watch.length) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('rv-in');
+          io.unobserve(entry.target);
+        });
+      }, { rootMargin: '0px 0px -6% 0px', threshold: 0.1 });
+      watch.forEach(function (el) { io.observe(el); });
+    }
+  }
 })();
 
