@@ -1,16 +1,17 @@
 {
-  "version": "0.10.39",
-  "versionCode": 49,
-  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.39.apk",
+  "version": "0.10.40",
+  "versionCode": 50,
+  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.40.apk",
   "fallbackUrl": "https://sicau-pocket.com/download.html",
-  "size": 50476104,
-  "sha256": "28fd1757946dc997a03d0c24f8ed463854feb014b8819b9c869f7a280ac265ad",
-  "md5": "5e292667a940f172b470bf2f3bdb83cc",
-  "releasedAt": "2026-11-22",
-  "minimumVersionCode": 33,
+  "size": 50481130,
+  "sha256": "b0cc6dd0fd70cab311e4c8e83378ddb55a8cfe45a6556d58f8066fef5b0946d1",
+  "md5": "6fc9203c56ecfbbebdc11f81238e4bc4",
+  "releasedAt": "2026-11-25",
+  "minimumVersionCode": 49,
   "notes": [
-    "首页头部改成视差滚动：往下滑时绿色那块比内容走得慢，问候语淡出，卡片从绿色上滑过去。绿色本身渐隐到透明，不再有硬接缝。",
-    "修复深色模式按下服务卡时闪出的白色大圆：现在改成贴着卡片、从触点漾开的柔光。",
-    "合并 v0.10.29–v0.10.38 的全部调整（含动效、课表行高、底部滑块居中、上课提醒、后台刷新）。"
+    "iOS 版上 TestFlight：桌面小组件 + 底部液态玻璃 TabBar",
+    "修复浅色模式卡片上的灰色暗斑",
+    "关于页标注 iOS · Android · Web，iOS 更新入口跳 TestFlight",
+    "站点补充 TestFlight 安装说明与排版修复"
   ]
 }

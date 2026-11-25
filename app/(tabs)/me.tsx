@@ -2,14 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useRef, useState } from 'react';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card, ListRow, SectionTitle } from '@/components/UIKit';
 import { radius, spacing } from '@/constants/theme';
 import { currentWeek, useAppState } from '@/lib/store';
 import { APP_VERSION } from '@/lib/version';
 import { GuideCard } from '@/components/GuideCard';
-import { downloadApk, installApk, supportsInAppInstall } from '@/lib/apkUpdate';
+import { IOS_INSTALL_PAGE, downloadApk, installApk, supportsInAppInstall } from '@/lib/apkUpdate';
 import { formatSize, useUpdate } from '@/lib/update';
 import { effectiveCampus } from '@/lib/campusState';
 import { useTheme } from '@/hooks/useTheme';
@@ -45,7 +45,8 @@ export default function MeScreen() {
   const { user, settings, courses, sessions } = useAppState();
   const week = currentWeek(settings);
 
-  const update = useUpdate(settings.autoUpdateCheck !== false);
+  // iOS 版通过 TestFlight 更新，不再用版本号比对（那里只有 APK 信息）
+  const update = useUpdate(Platform.OS !== 'ios' && settings.autoUpdateCheck !== false);
   const showUpdate = update.hasUpdate && !update.ignored && !!update.manifest;
   const [progress, setProgress] = useState<number | null>(null);
   const [downloading, setDownloading] = useState(false);
@@ -54,8 +55,13 @@ export default function MeScreen() {
 
   const startUpdate = async () => {
     const url = update.manifest?.apkUrl;
-    if (!url || downloading) return;
-    // iOS / 不支持应用内安装时，退回浏览器下载
+    if (downloading) return;
+    // iOS 上不能装 APK，跳 TestFlight 安装说明页
+    if (Platform.OS === 'ios') {
+      void Linking.openURL(IOS_INSTALL_PAGE).catch(() => {});
+      return;
+    }
+    if (!url) return;
     if (!supportsInAppInstall) {
       void Linking.openURL(url).catch(() => {});
       return;
@@ -123,9 +129,11 @@ export default function MeScreen() {
                 {formatSize(update.manifest?.size) ? ` · ${formatSize(update.manifest?.size)}` : ''}
                 {downloading
                   ? ` · 下载中 ${progress ?? 0}%`
-                  : supportsInAppInstall
-                    ? ' · 点这里下载并安装'
-                    : ' · 点这里下载安装包'}
+                  : Platform.OS === 'ios'
+                    ? ' · 点这里去 TestFlight 安装'
+                    : supportsInAppInstall
+                      ? ' · 点这里下载并安装'
+                      : ' · 点这里下载安装包'}
               </Text>
             </View>
             <Text style={{ fontSize: 11.5, fontWeight: '700', color: t.primary }}>

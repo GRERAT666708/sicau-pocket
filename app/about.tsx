@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge, Card, GhostButton, ListRow, SectionTitle } from '@/components/UIKit';
 import { spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { APP_VERSION } from '@/lib/version';
-import { downloadApk, installApk, supportsInAppInstall } from '@/lib/apkUpdate';
+import { IOS_INSTALL_PAGE, downloadApk, installApk, supportsInAppInstall } from '@/lib/apkUpdate';
 import { formatSize, useUpdate } from '@/lib/update';
 
 const FEATURES: { icon: keyof typeof Ionicons.glyphMap; title: string; desc: string }[] = [
@@ -25,7 +25,12 @@ export default function AboutScreen() {
 
   const startUpdate = useCallback(async () => {
     const url = update.manifest?.apkUrl;
-    if (!url || downloading) return;
+    if (downloading) return;
+    if (Platform.OS === 'ios') {
+      void Linking.openURL(IOS_INSTALL_PAGE).catch(() => {});
+      return;
+    }
+    if (!url) return;
     if (!supportsInAppInstall) {
       void Linking.openURL(url).catch(() => {});
       return;
@@ -75,7 +80,7 @@ export default function AboutScreen() {
           <Text style={{ fontSize: 20, fontWeight: '700', color: t.text, marginTop: 14 }}>川农口袋</Text>
           <Text style={{ fontSize: 12, color: t.textTertiary, marginTop: 4 }}>{`四川农业大学校园助手 · v${APP_VERSION}`}</Text>
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-            <Badge text="Android · Web" />
+            <Badge text="iOS · Android · Web" />
             <Badge text="MIT" />
           </View>
         </View>
@@ -85,8 +90,8 @@ export default function AboutScreen() {
             一个为川农同学做的轻量校园 App：查课表、算空闲、记专注、看电费和饭卡。
             参考了开源项目 ZZUPocket 的产品思路，用 Expo + React Native 重写。
             {'\n\n'}
-            目前只提供 Android 版本（另有 Web 版可在浏览器打开），iOS 暂不支持 ——
-            需要 Apple 开发者账号与真机签名，这部分还没做。
+            iOS 与 Android 都能装（另有 Web 版可在浏览器打开）。iOS 版目前通过 TestFlight 分发，
+            安装包与安卓共用同一套 Expo + React Native 代码，界面与数据完全一致。
           </Text>
         </Card>
 
@@ -138,44 +143,55 @@ export default function AboutScreen() {
         <View style={{ marginTop: spacing.xl }}>
           <SectionTitle title="版本" />
           <Card style={{ paddingVertical: 2, paddingHorizontal: 16 }}>
-            <ListRow
-              icon="cloud-download-outline"
-              title={update.checking ? '正在检查更新…' : downloading ? '正在下载更新' : '检查更新'}
-              subtitle={
-                update.checking
-                  ? `当前 v${APP_VERSION}，正在检查…`
-                  : downloading
-                    ? `正在下载 ${progress ?? 0}%，下载完会自动弹出安装`
-                    : update.hasUpdate && update.manifest
-                      ? `发现 v${update.manifest.version}${formatSize(update.manifest.size) ? ` · ${formatSize(update.manifest.size)}` : ''}${supportsInAppInstall ? '，点这里下载并安装' : '，点这里下载'}`
-                      : update.checked && update.manifest
-                        ? `当前 v${APP_VERSION}，已是最新`
-                        : update.checked
-                          ? `当前 v${APP_VERSION}，检查失败（可能没联网），点这里重试`
-                          : `当前 v${APP_VERSION}`
-              }
-              onPress={() => {
-                if (update.hasUpdate && update.manifest) {
-                  void startUpdate();
-                } else {
-                  void update.check(true);
-                }
-              }}
-            />
-            {notice ? (
-              <Text style={{ fontSize: 11.5, color: '#B4532A', marginTop: 8, lineHeight: 17 }}>{notice}</Text>
-            ) : null}
-            {update.hasUpdate && update.manifest ? (
+            {Platform.OS === 'ios' ? (
+              <ListRow
+                icon="logo-apple"
+                title="iOS 版更新"
+                subtitle={`当前 v${APP_VERSION} · 新版本通过 TestFlight 推送，打开 TestFlight 点「更新」即可`}
+                onPress={() => void Linking.openURL(IOS_INSTALL_PAGE).catch(() => {})}
+              />
+            ) : (
               <>
-                <View style={{ height: 1, backgroundColor: t.border }} />
                 <ListRow
-                  icon="close-circle-outline"
-                  title="忽略这个版本"
-                  subtitle={`不再提示 v${update.manifest.version}`}
-                  onPress={() => void update.dismiss()}
+                  icon="cloud-download-outline"
+                  title={update.checking ? '正在检查更新…' : downloading ? '正在下载更新' : '检查更新'}
+                  subtitle={
+                    update.checking
+                      ? `当前 v${APP_VERSION}，正在检查…`
+                      : downloading
+                        ? `正在下载 ${progress ?? 0}%，下载完会自动弹出安装`
+                        : update.hasUpdate && update.manifest
+                          ? `发现 v${update.manifest.version}${formatSize(update.manifest.size) ? ` · ${formatSize(update.manifest.size)}` : ''}${supportsInAppInstall ? '，点这里下载并安装' : '，点这里下载'}`
+                          : update.checked && update.manifest
+                            ? `当前 v${APP_VERSION}，已是最新`
+                            : update.checked
+                              ? `当前 v${APP_VERSION}，检查失败（可能没联网），点这里重试`
+                              : `当前 v${APP_VERSION}`
+                  }
+                  onPress={() => {
+                    if (update.hasUpdate && update.manifest) {
+                      void startUpdate();
+                    } else {
+                      void update.check(true);
+                    }
+                  }}
                 />
+                {notice ? (
+                  <Text style={{ fontSize: 11.5, color: '#B4532A', marginTop: 8, lineHeight: 17 }}>{notice}</Text>
+                ) : null}
+                {update.hasUpdate && update.manifest ? (
+                  <>
+                    <View style={{ height: 1, backgroundColor: t.border }} />
+                    <ListRow
+                      icon="close-circle-outline"
+                      title="忽略这个版本"
+                      subtitle={`不再提示 v${update.manifest.version}`}
+                      onPress={() => void update.dismiss()}
+                    />
+                  </>
+                ) : null}
               </>
-            ) : null}
+            )}
           </Card>
         </View>
 

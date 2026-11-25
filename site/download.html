@@ -8,7 +8,7 @@
 <link rel="canonical" href="https://sicau-pocket.com/download.html">
 <meta name="theme-color" content="#176b47">
 <link rel="icon" href="/assets/img/icon.png?v=20261118">
-<link rel="stylesheet" href="/assets/css/style.css?v=20261124">
+<link rel="stylesheet" href="/assets/css/style.css?v=20261127">
 </head>
 <body>
 
@@ -26,7 +26,7 @@
 
 <main class="wrap doc">
   <h1>下载 Android 版</h1>
-  <p class="updated">当前版本 <span data-app-version>v0.10.39</span> · arm64 · <span data-app-size>约 47 MB</span> · 适配 Android 8.0 及以上</p>
+  <p class="updated">当前版本 <span data-app-version>v0.10.40</span> · arm64 · <span data-app-size>约 47 MB</span> · 适配 Android 8.0 及以上</p>
 
   <div class="card dl-card">
     <img src="/assets/img/icon.png?v=20261118" alt="青禾小站图标">
@@ -41,7 +41,7 @@
         <a class="btn btn-ghost" href="https://github.com/GRERAT666708/sicau-pocket/releases" rel="noopener" target="_blank">历史版本（GitHub）</a>
       </div>
       <p class="meta-line" id="dl-tip" hidden>已开始下载。装好后第一次打开会提示你导入教务课表。</p>
-      <p class="meta-line" id="ios-hint" hidden>你似乎在用 iPhone / iPad。iOS 版正在准备上架 App Store，暂时请用安卓手机安装体验。</p>
+      <p class="ios-hint" id="ios-hint" hidden>你似乎在用 iPhone / iPad。iOS 版已上 TestFlight 内测，<a href="#ios-dl">往下看怎么装</a>。</p>
       <p class="meta-line" id="android-hint" hidden>检测到你在用 Android，直接点上面的按钮即可。</p>
     </div>
   </div>
@@ -54,15 +54,14 @@
     <li>到课表页点顶部提示条的「去导入」，选「打开教务网并导入」，登录后进到课表页点底部「导入这个页面」，示例课表就被替换成你自己的了。</li>
   </ol>
 
-  <h2 id="changelog">本次更新（v0.10.39）</h2>
+  <h2 id="changelog">本次更新（v0.10.40）</h2>
   <ul class="steps">
-    <li>首页头部改成<strong>视差滚动</strong>：往下滑时绿色那块比内容走得慢，问候语淡出，卡片从绿色上滑过去；绿色本身渐隐到透明，不再有一道硬接缝</li>
-    <li>修复深色模式按下服务卡时闪出的那个<strong>白色大圆</strong>（现在是贴着卡片、从触点漾开的柔光）</li>
-    <li>动画：切 tab 有弹簧滑块、列表进页面逐条淡入、翻周时课表轻轻横移（系统开了「减少动态效果」会自动关掉）</li>
-    <li>课表每节课的方格纵向加高、字放大一号，连排课的课名 / 教室 / 老师三行都放得下</li>
-    <li>底部四个 tab 的绿色滑块改成按内容宽度居中，不再偏左</li>
-    <li>上课提醒：可设提前 <strong>5 / 10 / 15 / 20 / 30 分钟</strong>，只在手机本机排通知，不联网；点通知直接跳到课表</li>
-    <li>桌面小组件的数据在后台也会更新；深色 / 浅色模式下次级文字调亮一档</li>
+    <li><strong>iOS 版可以装了</strong>：和安卓同一套 Expo + React Native 代码，通过 TestFlight 分发；界面、课表、专注记录完全一致，数据同样只存在手机上</li>
+    <li><strong>iOS 桌面小组件</strong>：WidgetKit 实现，2×2 看今天第一节课、4×2 看当天课表；点一下跳到课表页，改完课表自动刷新</li>
+    <li><strong>iOS 底部 TabBar 液态玻璃</strong>：iOS 26 及以上用系统玻璃材质，滑动时能透过底栏看到背景；低版本回退成半透明</li>
+    <li>修复<strong>浅色模式卡片上的灰色暗斑</strong>（渐变里的透明色被当成黑色插值，安卓那边也一并干净了）</li>
+    <li>关于页标明 <strong>iOS · Android · Web</strong>；iOS 上的「检查更新」改为直接打开 TestFlight 安装页，不再去下安卓安装包</li>
+    <li>站点加了一段「iOS 怎么装」的四步说明（先装 TestFlight → 收邀请 → 装 App → 后续在 TestFlight 里更新）</li>
   </ul>
 
   <div class="note">
@@ -73,6 +72,7 @@
   <table>
     <thead><tr><th>版本</th><th>改动</th></tr></thead>
     <tbody>
+      <tr><td>v0.10.40</td><td>iOS 版上 TestFlight（桌面小组件 + 底部液态玻璃 TabBar）；修复浅色模式卡片灰斑；关于页与更新入口支持 iOS；站点补充 TestFlight 安装说明。</td></tr>
       <tr><td>v0.10.39</td><td>首页头部改为视差滚动 + 绿色渐隐到透明（去掉硬接缝）；修复深色模式按下服务卡时的白色圆斑；合并 v0.10.29–v0.10.38 的全部调整。</td></tr>
       <tr><td>v0.10.28</td><td>交互动效（tab 弹簧滑块、页面元素逐条淡入、翻周横移）；课表格子加高、字号放大；底部滑块居中修正。一次性合并 v0.10.24–v0.10.27 的所有改动。</td></tr>
       <tr><td>v0.10.22</td><td>课表可以「分享成 .ics」：发到微信 / QQ / 邮箱，对方（或你在鸿蒙那侧）点开就能加进自己的日历；每次更新后第一次打开会弹一张小卡片，告诉你这次改了什么，看过一次就不再打扰。</td></tr>
@@ -90,8 +90,15 @@
   <h2 id="verify">安装包核对</h2>
   <p>如果你在意来源，可以在手机上用任意文件管理器查看 APK 的签名信息，或对照 GitHub 上的源码自行构建：<a href="https://github.com/GRERAT666708/sicau-pocket" rel="noopener" target="_blank">GRERAT666708/sicau-pocket</a>。包名为 <code>io.github.grerat666708.sicaupocket</code>。</p>
 
-  <h2 id="ios-dl">iOS 版本</h2>
-  <p class="muted">iOS 版正在准备上架 App Store（需要开发者账号与审核）。上架后会在这个页面放 App Store 链接；想参与 TestFlight 可以发邮件到 <a href="mailto:wcy77416160@outlook.com">wcy77416160@outlook.com</a>。</p>
+  <h2 id="ios-dl">iOS 版本（TestFlight 内测）</h2>
+  <p class="muted">iOS 版和安卓版是同一套代码（Expo + React Native），界面、课表、专注记录完全一致，数据同样只存在手机上。目前通过 TestFlight 分发，正式上架 App Store 需要等审核。</p>
+  <ol class="steps">
+    <li>先装 TestFlight：在 App Store 搜「TestFlight」（Apple 官方出品，免费）并安装。</li>
+    <li>拿到邀请：TestFlight 是邀请制的，把 Apple ID 邮箱发给 <a href="mailto:wcy77416160@outlook.com">wcy77416160@outlook.com</a>，或等群里发的公开邀请链接，点开后选「接受」。</li>
+    <li>装 App：在 TestFlight 里点「川农口袋」→ 安装，装完直接打开就能用。</li>
+    <li>后续更新：以后有新版本，TestFlight 会推送提醒，点一下就能更新，不用重新找安装包。</li>
+  </ol>
+  <p class="muted">注意：每个 TestFlight 构建只有 <strong>90 天</strong>有效期，过期后我会重新上传一版，你在 TestFlight 里更新即可；测试期间数据仍保存在本机，卸载才会清空。</p>
 </main>
 
 <footer>

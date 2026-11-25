@@ -1,0 +1,5 @@
+packages:
+  - '.'
+
+overrides:
+  expo-constants: 58.0.16

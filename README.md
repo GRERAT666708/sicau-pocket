@@ -1,9 +1,10 @@
 # 川农口袋 · 四川农业大学校园助手
 
-一个为四川农业大学（SICAU）同学做的轻量校园 App，用一套 TypeScript 代码写出来，目前**只提供 Android 版本**（另有 Web 版可在浏览器预览）。
+一个为四川农业大学（SICAU）同学做的轻量校园 App，用一套 TypeScript 代码写出来，**Android 与 iOS 都能装**（另有 Web 版可在浏览器预览）。
 
-> ⚠️ **暂不支持 iOS**：仓库里没有任何 iOS 构建产物，也没有 App Store 版本。代码本身是跨平台的（Expo + React Native），
-> 但 iOS 端还需要 Apple 开发者账号（$99/年）+ 真机签名才能装，这部分**没有做**。iPhone 同学请先用 Web 版，或等后续适配。
+> **iOS 版情况**：已经用同一套 Expo + React Native 代码出了 iOS 包，目前通过 **TestFlight** 分发给同学（正式上架 App Store 还要过审）。
+> 桌面小组件用 WidgetKit 单独实现（`targets/widget/`），通过 App Group `group.io.github.grerat666708.sicaupocket`
+> 与主 App 共享 `widget.json`；底部 TabBar 在 iOS 26+ 上用系统液态玻璃（`expo-glass-effect`），低版本回退自绘半透明。
 
 官网（建设中）：<https://sicau-pocket.com/>　·　下载页：<https://sicau-pocket.com/download.html>　·　隐私政策：<https://sicau-pocket.com/privacy.html>
 
@@ -280,7 +281,9 @@ npx eas-cli@latest build -p android --profile preview
 - **版本号自动递增**：`eas.json` 里 `preview` / `production` 都开了 `autoIncrement: true`，`appVersionSource: remote` 由 EAS 托管 —— 每构建一次 `versionCode`（Android）和 `buildNumber`（iOS）自动 +1，不用手动改；`version`（对用户显示的 0.7.x）还是手动改 `app.json`。
 - **免费额度**：Expo 免费账号每月有几次 Android 构建，排队时间视情况 5–30 分钟。
 - **本地构建（可选）**：`npx eas-cli@latest build -p android --profile preview --local` 需要本机有 Android SDK + JDK 17；没有的话就用云构建。
-- **iOS**：暂不支持。要出 iOS 包需要 Apple 开发者账号（$99/年），当前项目没有做这部分适配与签名。
+- **iOS**：用 `scripts/ios-release.sh`（archive → 导出 ipa → `altool` 上传 TestFlight）。需要 App Store Connect API Key
+  （`.home/asc/AuthKey_*.p8`）、导入的分发证书与两个描述文件（主 App + `SicauWidget` 扩展），每次上传前把
+  `app.json` 的 `ios.buildNumber` 加一——脚本会读它并校验 ipa 里的 `CFBundleVersion`，不一致直接失败。
 
 ### 自己的 GitHub 主页链接在哪
 
@@ -364,7 +367,7 @@ $SDK/platform-tools/adb exec-out screencap -p > shot.png
 npm i -g eas-cli          # 需要本机有 Node.js（LTS 即可）
 eas login                 # 免费注册 expo.dev 账号
 eas build -p android --profile preview     # 云端构建，产出可直接安装的 APK
-# iOS：暂不支持（需要 Apple 开发者账号 $99/年，当前未适配）
+# iOS：见 scripts/ios-release.sh（TestFlight 分发）
 eas build -p android --profile production  # AAB，用于 Google Play 上架
 eas build -p ios --profile production      # IPA，用于 App Store 上架
 ```
@@ -469,7 +472,9 @@ Android 的 `applicationId` 和 iOS 的 `bundleIdentifier` 采用「反写域名
 - [x] 教务课表导入（教务网导入 + 截图导入两种方式）
 - [x] 桌面小组件（Android AppWidget，4×2 / 2×2 两种）
 - [x] 导出 `.ics` 到系统日历（鸿蒙 / iOS / 安卓通用）
-- [ ] iOS 适配与签名（当前暂不支持）
+- [x] iOS 适配与签名（TestFlight 内测；App Store 正式版待审核）
+- [x] iOS 桌面小组件（WidgetKit + App Group `group.io.github.grerat666708.sicaupocket`）
+- [x] iOS 底部 TabBar 液态玻璃（`expo-glass-effect`，iOS 26+；低版本回退自绘）
 - [ ] 上课提醒与静音（本地通知）
 - [x] 成绩查询（导入式）
 - [x] 校历（按开学日期推算 + 教务处官方校历图）

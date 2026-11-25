@@ -124,6 +124,7 @@ img { max-width: 100%; display: block; }
 
 .meta-line { margin-top: 14px; font-size: 13px; color: var(--ink-500); display: flex; flex-wrap: wrap; gap: 6px 16px; }
 .meta-line b { color: var(--ink-700); font-weight: 600; }
+.ios-hint { display: block; margin-top: 14px; font-size: 13px; color: var(--ink-500); line-height: 1.7; }
 
 .hero-shot { position: relative; display: flex; justify-content: center; }
 .hero-shot::before {
@@ -208,11 +209,11 @@ details.faq p { margin: 10px 0 0; color: var(--ink-500); font-size: 14.8px; }
 @media (max-width: 620px) { .dl-card { grid-template-columns: 1fr; } }
 .dl-card img { width: 88px; height: 88px; border-radius: 22px; }
 .steps { counter-reset: s; list-style: none; padding: 0; margin: 8px 0 0; }
-.steps li { counter-increment: s; display: flex; gap: 12px; padding: 8px 0; color: var(--ink-700); font-size: 15px; }
+.steps li { counter-increment: s; position: relative; padding: 8px 0 8px 36px; color: var(--ink-700); font-size: 15px; line-height: 1.75; }
 .steps li::before {
-  content: counter(s); flex: none; width: 24px; height: 24px; border-radius: 8px;
+  content: counter(s); position: absolute; left: 0; top: 10px; width: 24px; height: 24px; border-radius: 8px;
   background: var(--green-100); color: var(--green-700); font-weight: 700; font-size: 13px;
-  display: grid; place-items: center; margin-top: 2px;
+  display: grid; place-items: center;
 }
 
 /* 页脚 */

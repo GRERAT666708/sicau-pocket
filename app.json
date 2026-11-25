@@ -2,17 +2,25 @@
   "expo": {
     "name": "川农口袋",
     "slug": "sicau-pocket",
-    "version": "0.10.39",
+    "version": "0.10.40",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sicau-pocket",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "io.github.grerat666708.sicaupocket",
       "infoPlist": {
-        "CFBundleDisplayName": "川农口袋"
+        "CFBundleDisplayName": "川农口袋",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "buildNumber": "2",
+      "appleTeamId": "HV6N28UTVZ",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.io.github.grerat666708.sicaupocket"
+        ]
       }
     },
     "android": {
@@ -25,7 +33,7 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "versionCode": 49,
+      "versionCode": 50,
       "permissions": [
         "android.permission.REQUEST_INSTALL_PACKAGES"
       ]
@@ -50,7 +58,8 @@
         }
       ],
       "./plugins/withScheduleWidget",
-      "./plugins/withProguardRules"
+      "./plugins/withProguardRules",
+      "@bacons/apple-targets"
     ],
     "experiments": {
       "typedRoutes": true

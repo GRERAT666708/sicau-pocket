@@ -60,7 +60,7 @@ export function GlassSurface({
       <View style={[StyleSheet.absoluteFill, { backgroundColor: tint }]} />
       {highlight ? (
         <LinearGradient
-          colors={[t.glassHighlight, 'transparent']}
+          colors={[t.glassHighlight, 'rgba(255,255,255,0)']}
           start={{ x: 0.15, y: 0 }}
           end={{ x: 0.85, y: 0.55 }}
           style={StyleSheet.absoluteFill}
@@ -155,8 +155,8 @@ export function GlassPressable({
             <LinearGradient
               colors={
                 dark
-                  ? ['rgba(255,255,255,0.14)', 'rgba(255,255,255,0.03)', 'transparent']
-                  : ['rgba(255,255,255,0.30)', 'rgba(255,255,255,0.04)', 'transparent']
+                  ? ['rgba(255,255,255,0.14)', 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0)']
+                  : ['rgba(255,255,255,0.30)', 'rgba(255,255,255,0.04)', 'rgba(255,255,255,0)']
               }
               style={StyleSheet.absoluteFill}
             />

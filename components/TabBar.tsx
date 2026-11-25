@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DUR, SPRING } from '@/components/motion';
@@ -43,6 +44,8 @@ export function TabBar({ state, descriptors, navigation, emitter, navigateToTab 
   const count = Math.max(state.routes.length, 1);
   const segW = innerWidth / count;
   const indicatorX = useSharedValue(0);
+  // iOS 26 起系统提供 Liquid Glass 材质；低版本与安卓继续用自绘的半透明玻璃
+  const glassBar = Platform.OS === 'ios' && isLiquidGlassAvailable();
 
   useEffect(() => {
     if (segW <= 0) return;
@@ -55,6 +58,84 @@ export function TabBar({ state, descriptors, navigation, emitter, navigateToTab 
     opacity: segW > 0 ? 1 : 0,
   }));
 
+  const barContent = (
+    <>
+      {glassBar ? null : (
+        <LinearGradient
+          colors={[t.glassHighlight, 'rgba(255,255,255,0)']}
+          start={{ x: 0.1, y: 0 }}
+          end={{ x: 0.9, y: 0.7 }}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+      )}
+      {/* 滑块：跟着当前 tab 弹簧滑动，比每个 tab 各自染色更连贯 */}
+      {/* 绝对定位以 padding box 为原点，所以这里补回 paddingHorizontal，才能和内容行对齐 */}
+      <View style={{ position: 'absolute', top: 0, bottom: 0, left: 8, right: 8 }} pointerEvents="none">
+        <Animated.View style={[{ position: 'absolute', top: 6, bottom: 6, width: PILL_W }, indicatorStyle]}>
+          <View
+            style={{
+              flex: 1,
+              borderRadius: 999,
+              backgroundColor: t.primarySoft,
+              borderWidth: StyleSheet.hairlineWidth,
+              borderColor: t.glassBorder,
+            }}
+          />
+        </Animated.View>
+      </View>
+      <View style={{ flex: 1, flexDirection: 'row' }} onLayout={(e) => setInnerWidth(e.nativeEvent.layout.width)}>
+        {state.routes.map((route: any, index: number) => {
+          const focused = state.index === index;
+          const meta = ICONS[route.name] ?? { on: 'ellipse', off: 'ellipse-outline', label: route.name };
+          const onPress = () => {
+            // expo-router 58 的 Tabs 传下来的是 emitter + navigateToTab（没有 navigation）
+            const event = emitter?.emit?.({ type: 'tabPress', target: route.key, canPreventDefault: true });
+            if (focused || event?.defaultPrevented) return;
+            void Haptics.selectionAsync().catch(() => {});
+            if (typeof navigateToTab === 'function') navigateToTab(route.key);
+            else navigation?.navigate(route.name);
+          };
+          return (
+            <Pressable
+              key={route.key}
+              onPress={onPress}
+              style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 4 }}
+            >
+              <View
+                style={{
+                  width: PILL_W,
+                  height: 40,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                }}
+              >
+                <TabIcon
+                  name={focused ? meta.on : meta.off}
+                  color={focused ? t.primary : t.textTertiary}
+                  focused={focused}
+                />
+                <Text
+                  allowFontScaling={false}
+                  style={{
+                    fontSize: 12,
+                    fontWeight: '700',
+                    color: t.primary,
+                    opacity: focused ? 1 : 0,
+                  }}
+                >
+                  {meta.label}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+    </>
+  );
+
   return (
     <View
       pointerEvents="box-none"
@@ -65,95 +146,45 @@ export function TabBar({ state, descriptors, navigation, emitter, navigateToTab 
         bottom: Math.max(insets.bottom, 10),
       }}
     >
-      <View
-        style={{
-          flexDirection: 'row',
-          borderRadius: 30,
-          paddingVertical: 8,
-          paddingHorizontal: 8,
-          overflow: 'hidden',
-          borderWidth: StyleSheet.hairlineWidth,
-          borderColor: t.glassBorder,
-          backgroundColor: t.glassStrong,
-          shadowColor: '#07200F',
-          shadowOpacity: t.scheme === 'dark' ? 0.45 : 0.16,
-          shadowRadius: 22,
-          shadowOffset: { width: 0, height: 10 },
-          elevation: 12,
-        }}
-      >
-        <LinearGradient
-          colors={[t.glassHighlight, 'transparent']}
-          start={{ x: 0.1, y: 0 }}
-          end={{ x: 0.9, y: 0.7 }}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        />
-        {/* 滑块：跟着当前 tab 弹簧滑动，比每个 tab 各自染色更连贯 */}
-        {/* 绝对定位以 padding box 为原点，所以这里补回 paddingHorizontal，才能和内容行对齐 */}
-        <View style={{ position: 'absolute', top: 0, bottom: 0, left: 8, right: 8 }} pointerEvents="none">
-          <Animated.View style={[{ position: 'absolute', top: 6, bottom: 6, width: PILL_W }, indicatorStyle]}>
-            <View
-              style={{
-                flex: 1,
-                borderRadius: 999,
-                backgroundColor: t.primarySoft,
-                borderWidth: StyleSheet.hairlineWidth,
-                borderColor: t.glassBorder,
-              }}
-            />
-          </Animated.View>
+      {glassBar ? (
+        <GlassView
+          glassEffectStyle="regular"
+          colorScheme={t.scheme}
+          style={{
+            flexDirection: 'row',
+            borderRadius: 30,
+            paddingVertical: 8,
+            paddingHorizontal: 8,
+            overflow: 'hidden',
+            shadowColor: '#07200F',
+            shadowOpacity: t.scheme === 'dark' ? 0.45 : 0.16,
+            shadowRadius: 22,
+            shadowOffset: { width: 0, height: 10 },
+          }}
+        >
+          {barContent}
+        </GlassView>
+      ) : (
+        <View
+          style={{
+            flexDirection: 'row',
+            borderRadius: 30,
+            paddingVertical: 8,
+            paddingHorizontal: 8,
+            overflow: 'hidden',
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: t.glassBorder,
+            backgroundColor: t.glassStrong,
+            shadowColor: '#07200F',
+            shadowOpacity: t.scheme === 'dark' ? 0.45 : 0.16,
+            shadowRadius: 22,
+            shadowOffset: { width: 0, height: 10 },
+            elevation: 12,
+          }}
+        >
+          {barContent}
         </View>
-        <View style={{ flex: 1, flexDirection: 'row' }} onLayout={(e) => setInnerWidth(e.nativeEvent.layout.width)}>
-          {state.routes.map((route: any, index: number) => {
-            const focused = state.index === index;
-            const meta = ICONS[route.name] ?? { on: 'ellipse', off: 'ellipse-outline', label: route.name };
-            const onPress = () => {
-              // expo-router 58 的 Tabs 传下来的是 emitter + navigateToTab（没有 navigation）
-              const event = emitter?.emit?.({ type: 'tabPress', target: route.key, canPreventDefault: true });
-              if (focused || event?.defaultPrevented) return;
-              void Haptics.selectionAsync().catch(() => {});
-              if (typeof navigateToTab === 'function') navigateToTab(route.key);
-              else navigation?.navigate(route.name);
-            };
-            return (
-              <Pressable
-                key={route.key}
-                onPress={onPress}
-                style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 4 }}
-              >
-                <View
-                  style={{
-                    width: PILL_W,
-                    height: 40,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <TabIcon
-                    name={focused ? meta.on : meta.off}
-                    color={focused ? t.primary : t.textTertiary}
-                    focused={focused}
-                  />
-                  <Text
-                    allowFontScaling={false}
-                    style={{
-                      fontSize: 12,
-                      fontWeight: '700',
-                      color: t.primary,
-                      opacity: focused ? 1 : 0,
-                    }}
-                  >
-                    {meta.label}
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
+      )}
     </View>
   );
 }

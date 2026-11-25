@@ -1,4 +1,7 @@
+import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
+
+import { reloadWidgets, widgetGroupPath } from '@/modules/widget-bridge';
 
 import { dayIndex, fmtHM, nowMinutes, weekdayCN } from '@/lib/date';
 import { coursePalette } from '@/constants/theme';
@@ -39,6 +42,16 @@ export type WidgetPayload = {
 };
 
 const FILE = `${FileSystem.documentDirectory ?? ''}widget.json`;
+
+/**
+ * iOS 小组件（WidgetKit）读的是 App Group 容器里的同一份 JSON：
+ * Android 写沙盒文件就够了，iOS 得额外写一份到共享目录。
+ */
+function iosGroupFile(): string | null {
+  if (Platform.OS !== 'ios') return null;
+  const dir = widgetGroupPath();
+  return dir ? `${dir}/widget.json` : null;
+}
 
 function pad2(n: number) {
   return `${n}`.padStart(2, '0');
@@ -109,6 +122,15 @@ export async function syncWidget(force = false): Promise<void> {
     const text = JSON.stringify(buildWidgetPayload());
     if (!force && text === lastWritten) return;
     await FileSystem.writeAsStringAsync(FILE, text);
+    const groupFile = iosGroupFile();
+    if (groupFile) {
+      try {
+        await FileSystem.writeAsStringAsync(groupFile, text);
+        reloadWidgets();
+      } catch (e) {
+        if (__DEV__) console.warn('[sicau] group widget write failed', e);
+      }
+    }
     lastWritten = text;
   } catch (e) {
     // 小组件是附加功能，写失败不影响主流程

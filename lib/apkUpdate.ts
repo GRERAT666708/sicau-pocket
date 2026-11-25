@@ -11,6 +11,12 @@ import { Platform } from 'react-native';
 
 export const supportsInAppInstall = Platform.OS === 'android';
 
+/**
+ * iOS 不走应用内安装（App Store 规则不允许），新版本只能去 TestFlight / App Store。
+ * 这里统一放一个落地页，页面里有 TestFlight 的安装步骤。
+ */
+export const IOS_INSTALL_PAGE = 'https://sicau-pocket.com/download.html#ios-dl';
+
 export type DownloadProgress = (percent: number) => void;
 
 export type DownloadResult =
