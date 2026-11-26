@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,7 +33,24 @@ export default function ScheduleScreen() {
     ? Math.floor(gridW / 7)
     : Math.floor((winW - spacing.lg * 2 - TIME_COL - GROUP_COL) / 7);
   const { settings, courses } = useAppState();
-  const [now] = useState(() => new Date());
+  // 不能只在挂载时取一次时间：App 常驻后台时，第二天早上「今天」还停在昨天（早上发现周四是周三）
+  const [now, setNow] = useState(() => new Date());
+  const refreshNow = useCallback(() => setNow(new Date()), []);
+  useFocusEffect(
+    useCallback(() => {
+      refreshNow();
+    }, [refreshNow]),
+  );
+  useEffect(() => {
+    const id = setInterval(refreshNow, 30_000);
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') refreshNow();
+    });
+    return () => {
+      clearInterval(id);
+      sub.remove();
+    };
+  }, [refreshNow]);
   const rawWeek = currentWeek(settings, now);
   // 新学期还没开学时 rawWeek 会是负数，钳到第 1 周避免出现「第 -13 周」
   const thisWeek = Math.min(Math.max(rawWeek, 1), settings.totalWeeks);
