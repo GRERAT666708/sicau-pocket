@@ -52,6 +52,39 @@ ACTUAL="$(unzip -p "$H/build/export/app.ipa" Payload/app.app/Info.plist | plutil
 echo "==> ipa CFBundleVersion=$ACTUAL (expect $BUILD_NUM)"
 if [ "$ACTUAL" != "$BUILD_NUM" ]; then echo "ERROR: build number mismatch, abort"; exit 3; fi
 
+# 小组件资源体检：WidgetKit 归档时对图片有像素上限（约小组件尺寸的 2 倍：
+# medium 756.8×328，面积 ≈248230）。超了的话 archive / export / 上传都不报错，
+# 但桌面上永远只显示系统占位骨架（build 3 就是这么发出去的）。
+# 这里在归档产物上直接拦掉。
+MAX_AREA=248230
+MAX_DIM=756
+ASSETS_CAR="$H/build/app.xcarchive/Products/Applications/app.app/PlugIns/SicauWidget.appex/Assets.car"
+if [ -f "$ASSETS_CAR" ]; then
+  echo "==> widget asset size check"
+  if ! xcrun assetutil --info "$ASSETS_CAR" | python3 -c '
+import json, sys
+
+max_area, max_dim = int(sys.argv[1]), int(sys.argv[2])
+bad = []
+for entry in json.load(sys.stdin):
+    w, h = entry.get("PixelWidth"), entry.get("PixelHeight")
+    if not w or not h:
+        continue
+    name = entry.get("Name") or "?"
+    if w * h > max_area or w > max_dim or h > max_dim:
+        bad.append("%s: %dx%d (area %d)" % (name, w, h, w * h))
+if bad:
+    print("ERROR: WidgetKit 归档会失败，这些图片超出上限：")
+    print("\n".join("  - " + b for b in bad))
+    sys.exit(1)
+print("ok: 小组件图片都在归档上限内")
+' "$MAX_AREA" "$MAX_DIM"; then
+    echo "ERROR: widget asset size check failed, abort"; exit 3
+  fi
+else
+  echo "==> WARN: 没有找到 SicauWidget.appex/Assets.car，跳过资源体检"
+fi
+
 if [ "$UPLOAD" = "--upload" ]; then
   echo "==> upload to TestFlight"
   mkdir -p ~/private_keys && cp "$KEY_PATH" ~/private_keys/ && chmod 600 ~/private_keys/$(basename "$KEY_PATH")

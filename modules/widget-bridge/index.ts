@@ -10,6 +10,8 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 
 type Native = {
   groupPath(): string | null;
+  /** 原生直接写 App Group 容器；返回是否写成功 */
+  write?(text: string): Promise<boolean>;
   reload(): void;
 };
 
@@ -30,6 +32,22 @@ export function reloadWidgets(): void {
     Native?.reload();
   } catch {
     // 小组件是附加功能，失败不影响主流程
+  }
+}
+
+/**
+ * 把小组件数据写进 App Group 容器。
+ *
+ * expo-file-system 只允许写 App 自己沙盒里的目录（SharedDirs 白名单），
+ * 共享容器的裸路径会被 FileNotWritableException 拦掉，所以走原生写。
+ * 拿到 false 时调用方可以退回 expo-file-system。
+ */
+export async function writeGroupWidgetJson(text: string): Promise<boolean> {
+  try {
+    if (!Native?.write) return false;
+    return await Native.write(text);
+  } catch {
+    return false;
   }
 }
 

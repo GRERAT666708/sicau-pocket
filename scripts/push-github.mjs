@@ -1,8 +1,12 @@
 #!/usr/bin/env node
-// 用 GitHub REST（Git Data API）把仓库推上去：本机 git 命令不可用，只能走 API。
+// 用 GitHub REST（Git Data API）把仓库推上去：本机 git push 连不上 github.com，只能走 API。
+// 只上传 blob 真的变了的文件（用本地 git 算 sha 跟远端树比对），并删掉远端已不存在的文件。
 // 用法：GH_TOKEN=xxx node scripts/push-github.mjs [--tag v0.10.9] [--apk ../sicau-pocket-v0.10.9-arm64.apk]
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative, extname } from 'node:path';
+//   可选环境变量 GH_MESSAGE：覆盖提交说明（不发版、只同步代码时用）
+import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const TOKEN = process.env.GH_TOKEN;
 const REPO = process.env.GH_REPO || 'GRERAT666708/sicau-pocket';
@@ -17,30 +21,6 @@ const APK = apkArg >= 0 ? argv[apkArg + 1] : null;
 if (!TOKEN) {
   console.error('缺少 GH_TOKEN');
   process.exit(1);
-}
-
-const SKIP_DIRS = new Set([
-  'node_modules', 'android', 'dist', '.expo', '.home', '.gradle-home', '.git',
-  'backups', '__pycache__', '.dsh', 'build', 'Pods', 'DerivedData',
-  // GitHub 要求 token 带 workflow scope 才能写 .github/workflows/，
-  // 当前 token 没开这个权限，会返回 404；工作流文件留在本地手动加。
-  '.github',
-]);
-const SKIP_FILE = /\.(apk|zip|aab|keystore|jks)$/i;
-
-function walk(dir, out = []) {
-  for (const name of readdirSync(dir)) {
-    const full = join(dir, name);
-    const st = statSync(full);
-    if (st.isDirectory()) {
-      if (SKIP_DIRS.has(name)) continue;
-      walk(full, out);
-    } else {
-      if (SKIP_FILE.test(name)) continue;
-      out.push(full);
-    }
-  }
-  return out;
 }
 
 async function api(path, init = {}) {
@@ -59,47 +39,70 @@ async function api(path, init = {}) {
   return text ? JSON.parse(text) : null;
 }
 
-const TEXT = new Set(['.ts', '.tsx', '.js', '.mjs', '.json', '.md', '.txt', '.yml', '.yaml', '.sh', '.css', '.html', '.xml', '.gradle', '.properties', '.pro', '.svg']);
-
-const files = walk(ROOT);
-console.log(`待推送 ${files.length} 个文件`);
+/** git ls-files：只推被 git 跟踪的文件（自动尊重 .gitignore，不会把 node_modules / Pods 推上去） */
+const files = execFileSync('git', ['ls-files', '-z'], { cwd: ROOT, maxBuffer: 64 * 1024 * 1024 })
+  .toString('utf8')
+  .split('\0')
+  .filter(Boolean);
 
 const ref = await api(`/repos/${REPO}/git/ref/heads/${BRANCH}`);
 const headSha = ref.object.sha;
 const head = await api(`/repos/${REPO}/git/commits/${headSha}`);
 console.log(`当前 HEAD ${headSha.slice(0, 7)}`);
+console.log(`本地 ${files.length} 个文件，和远端树比对…`);
 
 /** 资产名与部署脚本约定一致：sicau-pocket-v<version>-arm64.apk */
 function assetName() {
   return `sicau-pocket-v${version}-arm64.apk`;
 }
 
+const remoteTree = await api(`/repos/${REPO}/git/trees/${head.tree.sha}?recursive=1`);
+const remote = new Map();
+for (const entry of remoteTree.tree ?? []) if (entry.type === 'blob') remote.set(entry.path, entry.sha);
+
+/** 与 `git hash-object` 一样的 blob sha：sha1("blob <len>\0" + content) */
+function gitBlobSha(buf) {
+  return createHash('sha1').update(`blob ${buf.length}\0`).update(buf).digest('hex');
+}
+
 const tree = [];
-for (const full of files) {
-  const rel = relative(ROOT, full).split('\\').join('/');
-  if (rel === 'scripts/push-github.mjs') { /* 也一起推 */ }
-  const buf = readFileSync(full);
-  const isText = TEXT.has(extname(full).toLowerCase());
+const localPaths = new Set(files);
+for (const rel of files) {
+  // 安装包/压缩包走 Release 资产（git 树里那份是历史遗留，API 单 blob 有大小上限，重新上传会 422）
+  if (/\.(apk|aab|zip|ipa)$/i.test(rel)) continue;
+  // token 没有 workflow scope 时写 .github/workflows 会被 GitHub 报 404，先跳过
+  if (rel.startsWith('.github/workflows/')) continue;
+  const buf = readFileSync(join(ROOT, rel));
+  if (remote.get(rel) === gitBlobSha(buf)) continue; // 没变：base_tree 里已经带着
   const blob = await api(`/repos/${REPO}/git/blobs`, {
     method: 'POST',
-    body: JSON.stringify(
-      isText
-        ? { content: buf.toString('utf8'), encoding: 'utf-8' }
-        : { content: buf.toString('base64'), encoding: 'base64' },
-    ),
+    body: JSON.stringify({ content: buf.toString('base64'), encoding: 'base64' }),
+  }).catch((err) => {
+    throw new Error(`${rel}（${(buf.length / 1024 / 1024).toFixed(1)}MB）上传失败：${err.message}`);
   });
   tree.push({ path: rel, mode: '100644', type: 'blob', sha: blob.sha });
   process.stdout.write('.');
 }
-console.log('\nblobs 上传完成');
+
+// 远端有、本地已经没有的（删文件也同步过去）
+for (const path of remote.keys()) {
+  if (!localPaths.has(path)) tree.push({ path, mode: '100644', type: 'blob', sha: null });
+}
+
+console.log(`\n需要更新的条目 ${tree.length} 个`);
+if (tree.length === 0) {
+  console.log('远端已是最新，无需提交');
+  process.exit(0);
+}
 
 const newTree = await api(`/repos/${REPO}/git/trees`, {
   method: 'POST',
   body: JSON.stringify({ base_tree: head.tree.sha, tree }),
 });
 
-/** 提交说明直接取版本清单里的 notes，避免每次手改 */
+/** 提交说明直接取版本清单里的 notes，避免每次手改；GH_MESSAGE 可覆盖（例如只修代码、不发版） */
 function commitMessage(version) {
+  if (process.env.GH_MESSAGE && process.env.GH_MESSAGE.trim()) return process.env.GH_MESSAGE;
   let notes = [];
   try {
     const manifest = JSON.parse(readFileSync('site/app/version.json', 'utf8'));

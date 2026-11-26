@@ -15,6 +15,19 @@ public class WidgetBridgeModule: Module {
         .path
     }
 
+    /// 把 widget.json 直接写进 App Group 容器。
+    /// expo-file-system 只允许写自己沙盒里的目录，共享容器会被
+    /// FileNotWritableException 拦掉，所以在原生侧写最稳。
+    AsyncFunction("write") { (text: String) -> Bool in
+      guard
+        let url = FileManager.default
+          .containerURL(forSecurityApplicationGroupIdentifier: appGroup)?
+          .appendingPathComponent("widget.json")
+      else { return false }
+      try text.write(to: url, atomically: true, encoding: .utf8)
+      return true
+    }
+
     /// 数据变了让 WidgetKit 重画
     Function("reload") {
       if #available(iOS 14.0, *) {

@@ -53,6 +53,10 @@ if (!Number.isInteger(afterCode) || afterCode <= beforeCode) {
 // 1) app.json
 pkg.expo.version = after;
 pkg.expo.android.versionCode = afterCode;
+// iOS 的 buildNumber 每次上传 TestFlight 都得比上一版大（同一 version 下也要求递增），
+// 以前是手动改，忘了就会在 altool 上传时被拒。
+const iosBuild = Number(pkg.expo.ios?.buildNumber ?? 0);
+pkg.expo.ios = { ...(pkg.expo.ios ?? {}), buildNumber: String(iosBuild + 1) };
 writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
 
 // 2) lib/version.ts
@@ -89,5 +93,6 @@ console.log(`  app.json、lib/version.ts${touched ? `、${touched} 个站点页`
 console.log('');
 console.log('下一步：');
 console.log(`  1. 改 site/download.html 的「更新记录」，加一条 v${after}`);
-console.log('  2. bash scripts/build-apk-local.sh --arm64');
+console.log('  2. bash scripts/build-apk-local.sh --arm64        # Android APK');
 console.log(`  3. node scripts/gen-version-json.mjs sicau-pocket.apk --notes /tmp/notes.txt --min ${beforeCode}`);
+console.log(`  4. bash scripts/ios-release.sh --upload           # iOS TestFlight（buildNumber → ${iosBuild + 1}）`);

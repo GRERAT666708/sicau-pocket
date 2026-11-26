@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 
-import { reloadWidgets, widgetGroupPath } from '@/modules/widget-bridge';
+import { reloadWidgets, widgetGroupPath, writeGroupWidgetJson } from '@/modules/widget-bridge';
 
 import { dayIndex, fmtHM, nowMinutes, weekdayCN } from '@/lib/date';
 import { coursePalette } from '@/constants/theme';
@@ -27,7 +27,21 @@ export type WidgetHighlight = {
   state: 'class' | 'next';
 };
 
+/** 小尺寸小组件要显示的那一两门课：正在上 / 下一节 / 再后面 */
+export type WidgetFocus = {
+  time: string;
+  name: string;
+  room: string;
+  color: string;
+  state: 'class' | 'next' | 'later';
+};
+
 export type WidgetPayload = {
+  /**
+   * 数据格式版本。小组件侧会读它：比它能识别的版本新时显示「数据待更新」，
+   * 而不是解码失败后静默变成空课表。
+   */
+  payloadVersion: number;
   week: number;
   day: string;
   /** 「周日 11月8日」这种日期标签，小组件顶部用 */
@@ -37,6 +51,11 @@ export type WidgetPayload = {
   more: number;
   /** 小尺寸小组件用：正在上 / 下一节课 */
   highlight?: WidgetHighlight;
+  /** 小尺寸小组件最多显示两门，按「现在最相关」排序 */
+  focus?: WidgetFocus[];
+  /** 今天的课全部上完了 */
+  done?: boolean;
+  doneText?: string;
   emptyText?: string;
   updatedAt: string;
 };
@@ -82,6 +101,30 @@ export function buildWidgetPayload(): WidgetPayload {
     emptyText = `下一节 ${fmtHM(periodStart(status.next.slot.start))} 开始`;
   }
 
+  const courseOf = (e: (typeof entries)[number]): WidgetCourse => ({
+    time: `${fmtHM(periodStart(e.slot.start))}-${fmtHM(periodEnd(e.slot.end))}`,
+    name: e.course.name,
+    room: e.slot.room ?? e.course.room ?? '',
+    color: colorOf(e.course),
+  });
+
+  // 今天最后一节的下课时间：过了就算「今天的课程已经上完了」
+  const lastEnd = entries.reduce((m, e) => Math.max(m, periodEnd(e.slot.end)), 0);
+  const done = entries.length > 0 && nowMinutes() > lastEnd;
+
+  // 小尺寸要显示的那两门：正在上 + 下一节，或下一节 + 再下一节，或前两节
+  const cur =
+    status.kind === 'class' ? entries.indexOf(status.entry) : status.kind === 'break' ? entries.indexOf(status.next) : 0;
+  const focus: WidgetFocus[] = done
+    ? []
+    : [cur, cur + 1]
+        .filter((i) => i >= 0 && i < entries.length)
+        .slice(0, 2)
+        .map((i, n) => ({
+          ...courseOf(entries[i]),
+          state: status.kind === 'class' ? (n === 0 ? 'class' : 'later') : status.kind === 'break' ? (n === 0 ? 'next' : 'later') : 'later',
+        }));
+
   const highlight: WidgetHighlight | undefined =
     status.kind === 'class'
       ? {
@@ -102,12 +145,16 @@ export function buildWidgetPayload(): WidgetPayload {
         : undefined;
 
   return {
+    payloadVersion: 1,
     week,
     day,
     dateLabel: `${day} ${now.getMonth() + 1}月${now.getDate()}日`,
     courses,
     more: Math.max(0, entries.length - 6),
     highlight,
+    focus,
+    done,
+    doneText: done ? '今日课程已经上完了' : undefined,
     emptyText,
     updatedAt: `${pad2(now.getHours())}:${pad2(now.getMinutes())}`,
   };
@@ -122,13 +169,18 @@ export async function syncWidget(force = false): Promise<void> {
     const text = JSON.stringify(buildWidgetPayload());
     if (!force && text === lastWritten) return;
     await FileSystem.writeAsStringAsync(FILE, text);
-    const groupFile = iosGroupFile();
-    if (groupFile) {
-      try {
-        await FileSystem.writeAsStringAsync(groupFile, text);
-        reloadWidgets();
-      } catch (e) {
-        if (__DEV__) console.warn('[sicau] group widget write failed', e);
+    // iOS 小组件读的是 App Group 容器：优先走原生写（expo-file-system 写不进共享容器）
+    if (await writeGroupWidgetJson(text)) {
+      reloadWidgets();
+    } else {
+      const groupFile = iosGroupFile();
+      if (groupFile) {
+        try {
+          await FileSystem.writeAsStringAsync(`file://${groupFile}`, text);
+          reloadWidgets();
+        } catch (e) {
+          if (__DEV__) console.warn('[sicau] group widget write failed', e);
+        }
       }
     }
     lastWritten = text;

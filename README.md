@@ -63,6 +63,29 @@
 
 > **鸿蒙（HarmonyOS NEXT）没有安卓小组件。** 通过「卓易通」这类安卓兼容层安装时，App 的 `AppWidgetProvider` 拿不到宿主，桌面永远显示不了小组件——这是宿主缺失，不是本项目的 bug。替代方案：设置 → 数据 → **导出到系统日历（.ics）**，导入后在鸿蒙桌面加一张「日历」服务卡片，效果等价于课表卡片，还自带上课提醒；同一张 `.ics` 也可以用旁边的「分享 .ics 文件」丢到微信里，换设备再用。
 
+## 桌面小组件（iOS）
+
+iOS 用 WidgetKit 单独实现了一个扩展（`targets/widget/index.swift`，target 名 `SicauWidget`），随主 App 一起打进 ipa，通过 TestFlight 分发。支持 **systemSmall / systemMedium** 两种尺寸：
+
+| 尺寸 | 显示内容 |
+| --- | --- |
+| 小 | 顶部日期药丸 + **正在上 / 下一节**（最多两门，带「正在上课」「下一节」小标签）；今天上完了就换成「今日课程已经上完了 · 今天共 N 门课」 |
+| 中 | 顶部日期药丸 + 第 N 周 + 今天前 3 门（彩色竖条 / 课名 / 时间 / 教室），底部「还有 N 门」或「今日课程已经上完了」，右下角刷新时间 |
+
+两个尺寸右上角都压着一枚淡校徽水印（alpha 0.09~0.10，深色模式用白色版 `emblemWhite`）。
+
+数据怎么过去：
+
+| 部分 | 做法 |
+| --- | --- |
+| 数据桥 | `lib/widgetSync.ts` 把 payload 写成 `widget.json`；Android 写沙盒文件，iOS 额外写一份到 App Group `group.io.github.grerat666708.sicaupocket` |
+| 为什么不用 `expo-file-system` 写共享容器 | 它只允许写 App 自己沙盒里的目录，App Group 路径会抛 `FileNotWritableException`，而且被 `catch` 吞掉后完全静默。现在走 `modules/widget-bridge` 的原生 `write`（Swift 直接写 `containerURL(...)/widget.json`），失败才退回 `file://` 路径 |
+| 刷新 | 小组件侧每 20 分钟一条 entry；App 写数据时 `WidgetCenter.shared.reloadAllTimelines()` 主动刷新；App 关着时靠后台维护任务（30 分钟一次）重写数据 |
+| 跨天 | `getTimeline` 除了当前 entry，还会插一条 **次日 00:00:05** 的「新的一天」entry——只靠 20 分钟轮询的话，23:50 之后可能整晚都挂着前一天的课表 |
+| 数据版本 | payload 带 `payloadVersion`；小组件只认自己能解读的版本，遇到更新的数据会显示「还没有课表数据 / 打开 App 同步一次就好」，而不是解码失败后假装「今天没课」 |
+
+发布注意：WidgetKit 归档对图片有像素上限（约小组件尺寸的 2 倍：medium 756.8×328、面积 ≈248230）。超了的话 archive、导出、上传全都成功，但桌面只会显示系统占位骨架，**而且不会产生崩溃日志**（v0.10.40 build 3 就是这么发出去的）。现在 `scripts/ios-release.sh` 会在导出后跑 `assetutil` 检查 `SicauWidget.appex/Assets.car`，任何图片超过 756px 或面积超过 248230 直接 `exit 3`。
+
 ## 校园卡 / 电费（真实数据，v0.8.0）
 
 学校给学生的入口是微信里的 H5：`https://yktwechat.sicau.edu.cn/home/openHomePage?openid=…`。
@@ -272,13 +295,10 @@ npx eas-cli@latest build -p android --profile preview
 
 几个注意点：
 
-- **包名先换成自己的**：`app.json` 里 `android.package` / `ios.bundleIdentifier` 现在是 `com.sicau.pocket`，用的是学校域名，商店审核有风险。改成你自己的反写域名，最省事的是用 GitHub：
-  ```json
-  "android": { "package": "io.github.你的GitHub用户名.sicaupocket" },
-  "ios": { "bundleIdentifier": "io.github.你的GitHub用户名.sicaupocket" }
-  ```
+- **包名已经是自己的了**：`app.json` 里 `android.package` / `ios.bundleIdentifier` 现在是 `io.github.grerat666708.sicaupocket`（iOS 小组件是 `…​.widget`），用的是 GitHub 反写域名，不是学校域名。
   包名一旦发布就不能改，定之前想清楚。
-- **版本号自动递增**：`eas.json` 里 `preview` / `production` 都开了 `autoIncrement: true`，`appVersionSource: remote` 由 EAS 托管 —— 每构建一次 `versionCode`（Android）和 `buildNumber`（iOS）自动 +1，不用手动改；`version`（对用户显示的 0.7.x）还是手动改 `app.json`。
+- **版本号是本地的、要手动管**：`eas.json` 里 `appVersionSource: "local"`，没开 `autoIncrement`——`version`（用户看到的 0.10.x）、`android.versionCode`、`ios.buildNumber` 都在 `app.json` 里。
+  改版本用 `node scripts/bump-version.mjs patch`：它会一起改 `app.json`（version / versionCode / ios.buildNumber）、`lib/version.ts` 和站点页里的当前版本号，避免三处漏改。
 - **免费额度**：Expo 免费账号每月有几次 Android 构建，排队时间视情况 5–30 分钟。
 - **本地构建（可选）**：`npx eas-cli@latest build -p android --profile preview --local` 需要本机有 Android SDK + JDK 17；没有的话就用云构建。
 - **iOS**：用 `scripts/ios-release.sh`（archive → 导出 ipa → `altool` 上传 TestFlight）。需要 App Store Connect API Key

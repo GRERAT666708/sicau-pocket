@@ -21,16 +21,37 @@ struct WidgetHighlight: Codable {
   var state: String
 }
 
+/// 小尺寸小组件要显示的那一两门课：正在上 / 下一节 / 再后面
+struct WidgetFocus: Codable, Identifiable {
+  var time: String
+  var name: String
+  var room: String
+  var color: String
+  var state: String
+  var id: String { name + time }
+}
+
 struct WidgetPayload: Codable {
+  /// App 写数据时带上的格式版本；老版本 App 不写这个字段，按 1 处理
+  var payloadVersion: Int?
   var week: Int
   var day: String
   var dateLabel: String
   var courses: [WidgetCourse]
   var more: Int
   var highlight: WidgetHighlight?
+  var focus: [WidgetFocus]?
+  var done: Bool?
+  var doneText: String?
   var emptyText: String?
   var updatedAt: String
+
+  var schemaVersion: Int { payloadVersion ?? 1 }
 }
+
+/// 这个小组件能认的最高数据版本：比它新的数据会被当成「暂时读不到」，
+/// 而不是解码失败后静默显示「今天没课」。
+private let supportedPayloadVersion = 1
 
 enum WidgetStore {
   static func load() -> WidgetPayload? {
@@ -38,9 +59,11 @@ enum WidgetStore {
       let url = FileManager.default
         .containerURL(forSecurityApplicationGroupIdentifier: appGroup)?
         .appendingPathComponent("widget.json"),
-      let data = try? Data(contentsOf: url)
+      let data = try? Data(contentsOf: url),
+      let payload = try? JSONDecoder().decode(WidgetPayload.self, from: data)
     else { return nil }
-    return try? JSONDecoder().decode(WidgetPayload.self, from: data)
+    guard payload.schemaVersion <= supportedPayloadVersion else { return nil }
+    return payload
   }
 }
 
@@ -122,8 +145,63 @@ struct CourseRow: View {
   }
 }
 
+struct FocusRow: View {
+  let item: WidgetFocus
+  let p: Palette
+
+  private var tag: String? {
+    switch item.state {
+    case "class": return "正在上课"
+    case "next": return "下一节"
+    default: return nil
+    }
+  }
+
+  var body: some View {
+    HStack(alignment: .top, spacing: 7) {
+      RoundedRectangle(cornerRadius: 1.5)
+        .fill(Color(hex: item.color))
+        .frame(width: 3)
+      VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 5) {
+          Text(item.name)
+            .font(.system(size: 12.5, weight: .semibold))
+            .foregroundStyle(p.ink)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+          Spacer(minLength: 2)
+          if let tag {
+            Text(tag)
+              .font(.system(size: 9, weight: .semibold))
+              .foregroundStyle(p.brand)
+              .lineLimit(1)
+              .fixedSize()
+          }
+        }
+        HStack(spacing: 4) {
+          Text(item.time)
+            .font(.system(size: 9.5, weight: .medium))
+            .foregroundStyle(p.faint)
+            .lineLimit(1)
+          if !item.room.isEmpty {
+            Text("·")
+              .font(.system(size: 9.5))
+              .foregroundStyle(p.faint)
+            Text(item.room)
+              .font(.system(size: 9.5))
+              .foregroundStyle(p.sub)
+              .lineLimit(1)
+          }
+        }
+      }
+    }
+    .fixedSize(horizontal: false, vertical: true)
+  }
+}
+
 struct EmptyState: View {
   let text: String
+  var subtitle: String = "点开 App 看看课表"
   let p: Palette
 
   var body: some View {
@@ -132,9 +210,32 @@ struct EmptyState: View {
         .font(.system(size: 13, weight: .semibold))
         .foregroundStyle(p.ink)
         .lineLimit(2)
-      Text("点开 App 看看课表")
+      Text(subtitle)
         .font(.system(size: 10))
         .foregroundStyle(p.sub)
+        .lineLimit(2)
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+  }
+}
+
+/// 「数据没读到」用这个，和「今天真没课」区分开：
+/// 以前两种都落进 EmptyState，桌面上分不清是没课还是文件没写进来。
+struct NoDataState: View {
+  let title: String
+  let subtitle: String
+  let p: Palette
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      Text(title)
+        .font(.system(size: 13, weight: .semibold))
+        .foregroundStyle(p.ink)
+        .lineLimit(2)
+      Text(subtitle)
+        .font(.system(size: 10))
+        .foregroundStyle(p.sub)
+        .lineLimit(2)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
   }
@@ -143,6 +244,7 @@ struct EmptyState: View {
 struct MediumView: View {
   let payload: WidgetPayload?
   let p: Palette
+  var dayStart = false
 
   private var shown: [WidgetCourse] { Array((payload?.courses ?? []).prefix(3)) }
 
@@ -156,22 +258,34 @@ struct MediumView: View {
           .foregroundStyle(p.faint)
       }
 
-      if let payload, !shown.isEmpty {
-        VStack(alignment: .leading, spacing: 5) {
-          ForEach(shown) { CourseRow(course: $0, p: p) }
-        }
-        Spacer(minLength: 0)
-        HStack {
-          Text(payload.more > 0 ? "还有 \(payload.more) 门" : "共 \(payload.courses.count) 门")
-            .font(.system(size: 10))
-            .foregroundStyle(p.faint)
-          Spacer()
-          Text("刷新 \(payload.updatedAt)")
-            .font(.system(size: 10))
-            .foregroundStyle(p.faint)
+      if dayStart {
+        // 午夜那一条 entry：先换天，别让桌面上挂着昨天的课表
+        NoDataState(title: "新的一天", subtitle: "打开 App 刷新今天的课表", p: p)
+      } else if let payload {
+        if shown.isEmpty {
+          EmptyState(text: payload.emptyText ?? "今天没课，好好休息", p: p)
+        } else {
+          VStack(alignment: .leading, spacing: 5) {
+            ForEach(shown) { CourseRow(course: $0, p: p) }
+          }
+          Spacer(minLength: 0)
+          HStack {
+            Text(
+              payload.done == true
+                ? (payload.doneText ?? "今日课程已经上完了")
+                : (payload.more > 0 ? "还有 \(payload.more) 门" : "共 \(payload.courses.count) 门")
+            )
+              .font(.system(size: 10))
+              .foregroundStyle(p.faint)
+              .lineLimit(1)
+            Spacer()
+            Text("刷新 \(payload.updatedAt)")
+              .font(.system(size: 10))
+              .foregroundStyle(p.faint)
+          }
         }
       } else {
-        EmptyState(text: payload?.emptyText ?? "今天没课，好好休息", p: p)
+        NoDataState(title: "还没有课表数据", subtitle: "打开 App 同步一次就好", p: p)
       }
     }
     .padding(.horizontal, 12)
@@ -183,51 +297,67 @@ struct MediumView: View {
 struct SmallView: View {
   let payload: WidgetPayload?
   let p: Palette
+  var dayStart = false
+
+  private var focus: [WidgetFocus] { Array((payload?.focus ?? []).prefix(2)) }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 5) {
       DatePill(text: payload?.dateLabel ?? "今天", p: p)
 
-      if let h = payload?.highlight {
-        Text(h.state == "class" ? "正在上课" : "下一节")
-          .font(.system(size: 10, weight: .medium))
-          .foregroundStyle(p.sub)
-        Text(h.name)
-          .font(.system(size: 14, weight: .bold))
-          .foregroundStyle(p.ink)
-          .lineLimit(2)
-          .minimumScaleFactor(0.85)
-        Spacer(minLength: 0)
-        Text(h.time)
-          .font(.system(size: 10, weight: .medium))
-          .foregroundStyle(p.faint)
-        if !h.room.isEmpty {
-          Text(h.room)
-            .font(.system(size: 10))
+      if dayStart {
+        NoDataState(title: "新的一天", subtitle: "打开 App 刷新今天的课表", p: p)
+      } else if let payload {
+        if payload.done == true {
+          // 今天的课全部上完了
+          VStack(alignment: .leading, spacing: 4) {
+            Text(payload.doneText ?? "今日课程已经上完了")
+              .font(.system(size: 13, weight: .semibold))
+              .foregroundStyle(p.ink)
+              .lineLimit(2)
+              .minimumScaleFactor(0.85)
+            Text("今天共 \(payload.courses.count) 门课")
+              .font(.system(size: 10))
+              .foregroundStyle(p.sub)
+              .lineLimit(1)
+          }
+          .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        } else if !focus.isEmpty {
+          // 2×2 里放最常见的两门：正在上 + 下一节，或下一节 + 再下一节
+          VStack(alignment: .leading, spacing: 7) {
+            ForEach(focus) { FocusRow(item: $0, p: p) }
+          }
+          Spacer(minLength: 0)
+          if payload.courses.count > focus.count {
+            Text("今天共 \(payload.courses.count) 门课")
+              .font(.system(size: 9.5))
+              .foregroundStyle(p.faint)
+              .lineLimit(1)
+          }
+        } else if let first = payload.courses.first {
+          Text("今天第一节")
+            .font(.system(size: 10, weight: .medium))
             .foregroundStyle(p.sub)
-            .lineLimit(1)
-        }
-      } else if let payload, let first = payload.courses.first {
-        Text("今天第一节")
-          .font(.system(size: 10, weight: .medium))
-          .foregroundStyle(p.sub)
-        Text(first.name)
-          .font(.system(size: 14, weight: .bold))
-          .foregroundStyle(p.ink)
-          .lineLimit(2)
-          .minimumScaleFactor(0.85)
-        Spacer(minLength: 0)
-        Text(first.time)
-          .font(.system(size: 10, weight: .medium))
-          .foregroundStyle(p.faint)
-        if !first.room.isEmpty {
-          Text(first.room)
-            .font(.system(size: 10))
-            .foregroundStyle(p.sub)
-            .lineLimit(1)
+          Text(first.name)
+            .font(.system(size: 14, weight: .bold))
+            .foregroundStyle(p.ink)
+            .lineLimit(2)
+            .minimumScaleFactor(0.85)
+          Spacer(minLength: 0)
+          Text(first.time)
+            .font(.system(size: 10, weight: .medium))
+            .foregroundStyle(p.faint)
+          if !first.room.isEmpty {
+            Text(first.room)
+              .font(.system(size: 10))
+              .foregroundStyle(p.sub)
+              .lineLimit(1)
+          }
+        } else {
+          EmptyState(text: payload.emptyText ?? "今天没课，好好休息", p: p)
         }
       } else {
-        EmptyState(text: payload?.emptyText ?? "今天没课，好好休息", p: p)
+        NoDataState(title: "还没有课表数据", subtitle: "打开 App 同步一次就好", p: p)
       }
     }
     .padding(.horizontal, 12)
@@ -239,6 +369,8 @@ struct SmallView: View {
 struct Entry: TimelineEntry {
   let date: Date
   let payload: WidgetPayload?
+  /// 午夜那一条：只负责「换天」，让桌面提示打开 App 刷新，别整晚挂着前一天的课表
+  var dayStart = false
 }
 
 struct Provider: TimelineProvider {
@@ -251,9 +383,24 @@ struct Provider: TimelineProvider {
   }
 
   func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) {
-    // 每 20 分钟醒一次，App 侧写数据时还会主动 reload
-    let entry = Entry(date: Date(), payload: WidgetStore.load())
-    completion(Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(20 * 60))))
+    let now = Date()
+    let payload = WidgetStore.load()
+
+    // 下一个 00:00:05（今天还没过就取今天，过了就取明天）
+    let midnight = Calendar.current.nextDate(
+      after: now,
+      matching: DateComponents(hour: 0, minute: 0, second: 5),
+      matchingPolicy: .nextTime
+    ) ?? now.addingTimeInterval(20 * 60)
+
+    // 平时每 20 分钟醒一次（App 写数据时也会主动 reload）；
+    // 再加一条午夜 entry，避免 23:50 之后整晚都显示前一天的课表。
+    let entries = [
+      Entry(date: now, payload: payload),
+      Entry(date: midnight, payload: nil, dayStart: true),
+    ]
+    let nextRefresh = min(now.addingTimeInterval(20 * 60), midnight)
+    completion(Timeline(entries: entries, policy: .after(nextRefresh)))
   }
 }
 
@@ -266,13 +413,24 @@ struct SicauWidgetView: View {
     let p = Palette(scheme: scheme)
     Group {
       if family == .systemSmall {
-        SmallView(payload: entry.payload, p: p)
+        SmallView(payload: entry.payload, p: p, dayStart: entry.dayStart)
       } else {
-        MediumView(payload: entry.payload, p: p)
+        MediumView(payload: entry.payload, p: p, dayStart: entry.dayStart)
       }
     }
     .containerBackground(for: .widget) {
       p.card
+    }
+    .overlay(alignment: .topTrailing) {
+      // 和安卓版一样，右上角压一个淡校徽水印
+      Image(scheme == .dark ? "emblemWhite" : "emblem")
+        .resizable()
+        .interpolation(.high)
+        .scaledToFit()
+        .frame(width: family == .systemSmall ? 72 : 96)
+        .opacity(scheme == .dark ? 0.09 : 0.10)
+        .offset(x: family == .systemSmall ? 26 : 30, y: family == .systemSmall ? -10 : -16)
+        .allowsHitTesting(false)
     }
     .widgetURL(URL(string: "sicau-pocket://schedule"))
   }

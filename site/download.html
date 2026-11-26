@@ -62,6 +62,7 @@
     <li>修复<strong>浅色模式卡片上的灰色暗斑</strong>（渐变里的透明色被当成黑色插值，安卓那边也一并干净了）</li>
     <li>关于页标明 <strong>iOS · Android · Web</strong>；iOS 上的「检查更新」改为直接打开 TestFlight 安装页，不再去下安卓安装包</li>
     <li>站点加了一段「iOS 怎么装」的四步说明（先装 TestFlight → 收邀请 → 装 App → 后续在 TestFlight 里更新）</li>
+    <li><strong>iOS 小组件桌面不显示的修复（build 4）</strong>：build 3 里水印图超出 WidgetKit 归档上限，桌面上只剩系统占位骨架；已把水印压到 288px，并改成原生写 App Group（此前数据其实没写进共享容器）</li>
   </ul>
 
   <div class="note">
@@ -72,7 +73,7 @@
   <table>
     <thead><tr><th>版本</th><th>改动</th></tr></thead>
     <tbody>
-      <tr><td>v0.10.40</td><td>iOS 版上 TestFlight（桌面小组件 + 底部液态玻璃 TabBar）；修复浅色模式卡片灰斑；关于页与更新入口支持 iOS；站点补充 TestFlight 安装说明。</td></tr>
+      <tr><td>v0.10.40</td><td>iOS 版上 TestFlight（桌面小组件 + 底部液态玻璃 TabBar）；修复浅色模式卡片灰斑；关于页与更新入口支持 iOS；站点补充 TestFlight 安装说明；iOS 小组件桌面不显示的修复（build 4：图片归档上限 + App Group 原生写）；小组件跨天自动换天、数据版本与空态区分。</td></tr>
       <tr><td>v0.10.39</td><td>首页头部改为视差滚动 + 绿色渐隐到透明（去掉硬接缝）；修复深色模式按下服务卡时的白色圆斑；合并 v0.10.29–v0.10.38 的全部调整。</td></tr>
       <tr><td>v0.10.28</td><td>交互动效（tab 弹簧滑块、页面元素逐条淡入、翻周横移）；课表格子加高、字号放大；底部滑块居中修正。一次性合并 v0.10.24–v0.10.27 的所有改动。</td></tr>
       <tr><td>v0.10.22</td><td>课表可以「分享成 .ics」：发到微信 / QQ / 邮箱，对方（或你在鸿蒙那侧）点开就能加进自己的日历；每次更新后第一次打开会弹一张小卡片，告诉你这次改了什么，看过一次就不再打扰。</td></tr>
