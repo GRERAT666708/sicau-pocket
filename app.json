@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "川农口袋",
+    "name": "口袋课表",
     "slug": "sicau-pocket",
     "version": "0.10.41",
     "orientation": "portrait",
@@ -12,7 +12,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "io.github.grerat666708.sicaupocket",
       "infoPlist": {
-        "CFBundleDisplayName": "川农口袋",
+        "CFBundleDisplayName": "口袋课表",
         "ITSAppUsesNonExemptEncryption": false
       },
       "buildNumber": "5",

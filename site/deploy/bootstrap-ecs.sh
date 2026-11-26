@@ -32,7 +32,7 @@ if [[ ! -f "$DIR/index.html" ]]; then
   cat > "$DIR/index.html" <<HTML
 <!doctype html><meta charset="utf-8"><title>${DOMAIN}</title>
 <body style="font-family:-apple-system,system-ui,sans-serif;padding:40px;line-height:1.8">
-<h1>川农口袋</h1>
+<h1>口袋课表</h1>
 <p>站点正在部署中。如果看到这个页面，说明 nginx 已经正常工作。</p>
 <p>域名：${DOMAIN}</p>
 </body>

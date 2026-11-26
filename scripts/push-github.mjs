@@ -157,7 +157,7 @@ if (TAG) {
     method: 'POST',
     body: JSON.stringify({
       tag_name: TAG,
-      name: `川农口袋 v${version}`,
+      name: `口袋课表 v${version}`,
       body: releaseBody(),
       draft: false,
       prerelease: false,

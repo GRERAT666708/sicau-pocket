@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 川农口袋 iOS 出包：archive → 导出 ipa →（可选）上传 TestFlight
+# 口袋课表 iOS 出包：archive → 导出 ipa →（可选）上传 TestFlight
 # 依赖：.home/asc/ 下的 App Store Connect API Key、已导入的签名 keychain
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
