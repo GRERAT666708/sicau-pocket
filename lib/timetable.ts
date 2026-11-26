@@ -147,8 +147,66 @@ function looksLikeBooking(text: string): boolean {
   return /借用教室|借用|继教院|培训班|讲座|会议|开会|考试安排/.test(text);
 }
 
-/** 解析一个课表格子的多行文本 */
-export function parseCourseCell(lines: string[]): CellInfo | null {
+/** 单双周标记：(单)、(双)、单周、双周（课程名里的「单片机」不算） */
+function weekMarkersOf(lines: string[]): string {
+  let out = '';
+  for (const line of lines) {
+    const t = line.replace(/\s/g, '');
+    const m = t.match(/^[（(【](单|双)[）)】]$/);
+    if (m) {
+      out += m[1];
+      continue;
+    }
+    if (/^(单|双)周$/.test(t)) out += t[0];
+  }
+  return out;
+}
+
+/** 同一时段排了不同周次的课时，正方会在一个格子里上下堆两门课，这里按结构切块 */
+function splitCourseBlocks(lines: string[]): string[][] {
+  const blocks: string[][] = [];
+  let cur: string[] = [];
+  let sawWeeks = false;
+  for (const raw of lines) {
+    const line = raw.replace(/\u00a0/g, ' ').trim();
+    if (!line) continue;
+    if (cur.length && sawWeeks && startsNewCourseLine(line)) {
+      blocks.push(cur);
+      cur = [];
+      sawWeeks = false;
+    }
+    cur.push(line);
+    // 教室号「2-607」也能被 looksLikeWeeks 认成周次范围，这里要排除
+    if (looksLikeWeeks(stripMetaTokens(line)) && !(looksLikeRoom(line) && !/周/.test(line))) {
+      sawWeeks = true;
+    }
+  }
+  if (cur.length) blocks.push(cur);
+  return blocks;
+}
+
+/** 判断一行是不是「另一门课」的开头（周次之后出现的课程名） */
+function startsNewCourseLine(line: string): boolean {
+  const t = line.trim();
+  if (!t) return false;
+  if (/^(任课教师|教师|老师|上课教室|教室|地点|校区)\s*[:：]/.test(t)) return false;
+  if (looksLikeWeeks(t)) return false;
+  if (/^[（(]\s*(单|双|单双|全)\s*[）)]$/.test(t)) return false;
+  if (/^\d+\s*人$/.test(t)) return false;
+  if (/^[（(]\s*\d+\s*学时\s*[）)]$/.test(t)) return false;
+  if (/^[\d,，\-\s周单双]+$/.test(t)) return false;
+  const cjk = t.match(/[\u4e00-\u9fa5]/g)?.length ?? 0;
+  const hasCode = /[\d_]{8,}/.test(t);
+  if (cjk < 2 && !hasCode) return false;
+  // 「科技园B区 C402」这种教室（有区/楼/室 + 门牌号）不是课程名
+  if (looksLikeRoom(t) && /[A-Za-z]?\d{2,4}/.test(t) && !/(实验|理论|概论|原理|设计)$/.test(t)) {
+    return false;
+  }
+  return true;
+}
+
+/** 解析一个「课程块」（一门课的信息；一个格子里可能有多块） */
+function parseCourseBlock(lines: string[]): CellInfo | null {
   const cleaned = lines
     .map((l) => l.replace(/\u00a0/g, ' ').trim())
     .filter((l) => l.length > 0)
@@ -174,14 +232,23 @@ export function parseCourseCell(lines: string[]): CellInfo | null {
   let name = (colonSplit ? colonSplit[1] : headNoMeta)
     .replace(/\s+/g, '')
     .replace(/[:：]$/, '')
-    .replace(/[（(]\s*\d+\s*[）)]$/, '');
+    .replace(/[（(]\s*\d+\s*[）)]$/, '')
+    .replace(/[（(]\s*(单|双)\s*[）)]$/, '');
   const codeMatch = name.match(/^(.*?)([\d_]{8,})$/);
   if (codeMatch) name = codeMatch[1].replace(/\s+/g, '');
   if (!name || name.length < 2) return null;
   if (/^\d{1,2}([-－]\d{1,2})?\s*节?$/.test(name)) return null; // 「34节」这种节次标签
 
-  const weeksLineIndex = merged.findIndex((l, i) => i > 0 || colonSplit ? looksLikeWeeks(stripMetaTokens(l)) : false);
-  const weeksSource = weeksLineIndex >= 0 ? stripMetaTokens(merged[weeksLineIndex]) : '';
+  const weeksLineIndex = merged.findIndex(
+    (l, i) =>
+      (i > 0 || Boolean(colonSplit)) &&
+      // 「2-607」这种是教室号，不是周次（周次一般带「周」字，纯数字范围也至少得是 1-16 这种）
+      !(looksLikeRoom(l) && !/周/.test(l)) &&
+      looksLikeWeeks(stripMetaTokens(l)),
+  );
+  // 单双周可能单独占一行「(单)」，也可能跟在课程名后面，统一并到周次串里
+  const weeksSource =
+    (weeksLineIndex >= 0 ? stripMetaTokens(merged[weeksLineIndex]) : '') + weekMarkersOf(merged);
   const weeks = weeksSource ? parseWeeksText(weeksSource) : [];
 
   const rest = merged.filter((_, i) => i !== 0 && i !== weeksLineIndex);
@@ -190,7 +257,9 @@ export function parseCourseCell(lines: string[]): CellInfo | null {
   for (const rawLine of rest) {
     const line = stripMetaTokens(rawLine);
     if (!line) continue;
-    if (/^[\d,，\-\s周单双]+$/.test(line)) continue; // 纯周次残渣
+    if (/^[（(]\s*(单|双)\s*[）)]$/.test(line)) continue; // 单双周标记已经并进周次
+    // 纯周次残渣（「1-16」「3,5,7」）跳过；但「2-607」「4-608」这种门牌号是教室，不能丢
+    if (/^[\d,，\-\s周单双]+$/.test(line) && !/[A-Za-z]?\d{1,2}[-－][A-Za-z]?\d{3,4}/.test(line)) continue;
     // 「成都校区: 4-B608」这类：冒号后面是教室
     const roomSplit = line.match(/^(.*?)[:：]\s*(.+)$/);
     if (roomSplit && looksLikeRoom(roomSplit[2])) {
@@ -216,6 +285,30 @@ export function parseCourseCell(lines: string[]): CellInfo | null {
   return { name, teacher, room, weeks, hasCode: Boolean(codeMatch) || /[:：]/.test(headRaw) };
 }
 
+/**
+ * 解析一个格子的多门课：同一时段不同周次在正方里会叠在一个 `<td>` 里，
+ * 只认第一门会漏课（用户反馈：周四 3-4 的毛概、周五晚的动物解剖学实验都丢了）。
+ */
+export function parseCourseCellBlocks(lines: string[]): CellInfo[] {
+  const cleaned = lines
+    .map((l) => l.replace(/\u00a0/g, ' ').trim())
+    .filter((l) => l.length > 0)
+    .filter((l) => !/^\d+\s*人$/.test(l))
+    .filter((l) => !COURSE_KIND.test(l) || l.length > 8);
+  if (!cleaned.length) return [];
+  const out: CellInfo[] = [];
+  for (const block of splitCourseBlocks(cleaned)) {
+    const info = parseCourseBlock(block);
+    if (info) out.push(info);
+  }
+  return out;
+}
+
+/** 解析一个课表格子的多行文本（多门课时只取第一门，兼容旧调用） */
+export function parseCourseCell(lines: string[]): CellInfo | null {
+  return parseCourseCellBlocks(lines)[0] ?? null;
+}
+
 /** 页面标题里常带教室名，如「四川农业大学课程表(4-A103)」；学生课表里括号是姓名，不能当教室 */
 function pageRoomHint(html: string): string | undefined {
   const matched = html.match(/课程表\s*[（(]([^）)]{2,20})[）)]/);
@@ -224,53 +317,56 @@ function pageRoomHint(html: string): string | undefined {
   return /[-－]\s*[A-Za-z]?\d|\d{3}|教|楼/.test(value) ? value : undefined;
 }
 
-/** 从整页 HTML 里找出课表，解析成扁平的 slot 列表 */
-export function parseTimetableHtml(html: string): ParsedSlot[] {
-  const tables = extractTables(html);
-  const best = tables
-    .map((t) => parseTable(t))
-    .filter((grid) => grid.length > 2)
-    .sort((a, b) => scoreTable(b) - scoreTable(a))[0];
-  if (!best) return [];
-  const roomHint = pageRoomHint(html);
+type GridLayout = { grid: HtmlCell[][]; headerRow: number; dayCols: Record<number, number> };
 
-  // 找到含「星期一」的表头行，确定每一列是周几
-  let headerRowIndex = -1;
-  let dayCols: Record<number, number> = {};
-  for (let r = 0; r < Math.min(best.length, 6); r += 1) {
+/** 在一张表格里找「星期」表头；找不到但传了上一张的列位置时，按「分页续表」处理 */
+function findGridLayout(grid: HtmlCell[][], previous?: Record<number, number>): GridLayout | null {
+  for (let r = 0; r < Math.min(grid.length, 6); r += 1) {
     const map: Record<number, number> = {};
-    best[r].forEach((cell, c) => {
+    grid[r].forEach((cell, c) => {
       const text = cell.text.replace(/\s/g, '');
       const idx = DAY_KEYS.findIndex((k) => text === k || text.startsWith(k));
       const idx2 = idx >= 0 ? idx : DAY_KEYS_SHORT.findIndex((k) => text === k || text.startsWith(k));
       if (idx2 >= 0) map[idx2 + 1] = c;
     });
-    if (Object.keys(map).length >= 5) {
-      headerRowIndex = r;
-      dayCols = map;
-      break;
-    }
+    if (Object.keys(map).length >= 5) return { grid, headerRow: r, dayCols: map };
+
     // 表头只写「一 二 三 …」的版本：一行里至少有 5 个单字周几，且列号递增
     const singleMap: Record<number, number> = {};
-    best[r].forEach((cell, c) => {
+    grid[r].forEach((cell, c) => {
       const idx = DAY_KEYS_SINGLE.indexOf(cell.text.replace(/\s/g, ''));
       if (idx >= 0) singleMap[idx + 1] = c;
     });
     const singleCols = Object.entries(singleMap).map(([day, col]) => ({ day: Number(day), col }));
     const ascending = singleCols.every((item, i) => i === 0 || item.col > singleCols[i - 1].col);
-    if (singleCols.length >= 5 && ascending) {
-      headerRowIndex = r;
-      dayCols = singleMap;
-      break;
+    if (singleCols.length >= 5 && ascending) return { grid, headerRow: r, dayCols: singleMap };
+  }
+  // 打印课表跨页时，第二张表常常不再重复表头，直接沿用上一张的星期列
+  if (previous && Object.keys(previous).length >= 5 && grid.length >= 2) {
+    const width = grid.reduce((max, row) => Math.max(max, row.length), 0);
+    const hasPeriodLabel = grid.some((row) => row.some((cell) => /节/.test(cell.text)));
+    // 至少 7 个星期列 + 1 个节次列；有的分页表不带「上午/下午」分组列，宽度会少一列
+    const wideEnough = width >= Object.keys(previous).length + 1;
+    if (hasPeriodLabel && wideEnough) {
+      // 列数和上一张一样就直接沿用；不一样时按「7 个星期列在最右边」右对齐推列号
+      const prevWidth = Math.max(...Object.values(previous)) + 1;
+      if (width === prevWidth) return { grid, headerRow: -1, dayCols: previous };
+      const labelCols = width - DAY_KEYS.length;
+      const shifted: Record<number, number> = {};
+      for (let day = 1; day <= DAY_KEYS.length; day += 1) shifted[day] = labelCols + day - 1;
+      return { grid, headerRow: -1, dayCols: shifted };
     }
   }
-  if (headerRowIndex < 0) return [];
+  return null;
+}
 
+function parseLayoutRows(layout: GridLayout, roomHint?: string): ParsedSlot[] {
+  const { grid, headerRow, dayCols } = layout;
   const slots: ParsedSlot[] = [];
   const firstDayCol = Math.min(...Object.values(dayCols));
   let carried: { start: number; end: number } | null = null;
-  for (let r = headerRowIndex + 1; r < best.length; r += 1) {
-    const row = best[r];
+  for (let r = headerRow + 1; r < grid.length; r += 1) {
+    const row = grid[r];
     const rowText = row.map((c) => c.text).join(' ');
     const group = periodGroupOf(rowText, 1);
 
@@ -290,19 +386,50 @@ export function parseTimetableHtml(html: string): ParsedSlot[] {
       if (!cell || !cell.lines.length) continue;
       // 课程格子跨多行时，只在它出现的第一行记录
       if (cell.row !== r) continue;
-      const info = parseCourseCell(cell.lines);
-      if (!info) continue;
-      const booking = looksLikeBooking(cell.text) || /学院$|中心$|办公室$|培训班$/.test(info.name);
-      slots.push({
-        name: info.name,
-        teacher: info.teacher,
-        room: info.room ?? roomHint,
-        day: Number(dayKey),
-        start,
-        end: Math.max(end, start + Math.max(1, cell.rowSpan) - 1),
-        weeks: info.weeks,
-        booking,
-      });
+      // 一个格子里可能塞了不同周次的两门课，要全取
+      for (const info of parseCourseCellBlocks(cell.lines)) {
+        const booking = looksLikeBooking(cell.text) || /学院$|中心$|办公室$|培训班$/.test(info.name);
+        slots.push({
+          name: info.name,
+          teacher: info.teacher,
+          room: info.room ?? roomHint,
+          day: Number(dayKey),
+          start,
+          end: Math.max(end, start + Math.max(1, cell.rowSpan) - 1),
+          weeks: info.weeks,
+          booking,
+        });
+      }
+    }
+  }
+  return slots;
+}
+
+/** 从整页 HTML 里找出课表，解析成扁平的 slot 列表 */
+export function parseTimetableHtml(html: string): ParsedSlot[] {
+  const roomHint = pageRoomHint(html);
+  const grids = extractTables(html)
+    .map((t) => parseTable(t))
+    // 分页后的第二张表可能只剩 2 行（晚上 9-10 节），不能按「> 2 行」过滤掉
+    .filter((grid) => grid.length >= 2)
+    .sort((a, b) => scoreTable(b) - scoreTable(a));
+
+  // 以前只取分数最高的那一张表；教务系统打印课表分页时，晚上那半截在另一张表里，
+  // 于是「课表底部几门课」整段丢失。现在把每张像课表的都解析一遍，按内容去重合并。
+  const slots: ParsedSlot[] = [];
+  const seen = new Set<string>();
+  let prevCols: Record<number, number> | undefined;
+  for (const grid of grids) {
+    const layout = findGridLayout(grid, prevCols);
+    if (!layout) continue;
+    prevCols = layout.dayCols;
+    for (const slot of parseLayoutRows(layout, roomHint)) {
+      const key = `${slot.name}|${slot.teacher ?? ''}|${slot.day}|${slot.start}|${slot.end}|${slot.weeks.join(
+        ',',
+      )}|${slot.room ?? ''}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      slots.push(slot);
     }
   }
   return slots;

@@ -28,6 +28,8 @@ export function decodeEntities(input: string): string {
 export function htmlToLines(fragment: string): string[] {
   const withBreaks = fragment
     .replace(/<br\s*\/?>/gi, '\n')
+    // 同一格里塞两门课时，正方常用 <hr> 分隔；不换成换行会把两门课粘成一行
+    .replace(/<hr\b[^>]*>/gi, '\n')
     .replace(/<\/(td|th|tr|div|p|li|h\d)>/gi, '\n')
     .replace(/<[^>]*>/g, '');
   return decodeEntities(withBreaks)
