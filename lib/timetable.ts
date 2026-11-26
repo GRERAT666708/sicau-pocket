@@ -189,6 +189,8 @@ function splitCourseBlocks(lines: string[]): string[][] {
 function startsNewCourseLine(line: string): boolean {
   const t = line.trim();
   if (!t) return false;
+  // 「(实验)」「(连堂4学时)」「-----」这种纯标记/分隔行不是课程名
+  if (!stripMetaTokens(t) || /^[-—─·\s]+$/.test(t)) return false;
   if (/^(任课教师|教师|老师|上课教室|教室|地点|校区)\s*[:：]/.test(t)) return false;
   if (looksLikeWeeks(t)) return false;
   if (/^[（(]\s*(单|双|单双|全)\s*[）)]$/.test(t)) return false;
@@ -225,8 +227,11 @@ function parseCourseBlock(lines: string[]): CellInfo | null {
     merged.push(line);
   }
 
-  // 有的版式把课程名单独一行、冒号在行尾，教师另起一行
-  const headRaw = merged[0] ?? '';
+  // 有的版式把课程名单独一行、冒号在行尾，教师另起一行；
+  // 多课格子切开后，块首可能还残留「(实验)」「----」这类行，要跳过
+  const headRaw =
+    merged.find((l) => Boolean(stripMetaTokens(l)) && !/^[-—─·\s]+$/.test(l)) ?? '';
+  if (!headRaw) return null;
   const headNoMeta = stripMetaTokens(headRaw);
   const colonSplit = headNoMeta.match(/^([^:：]+)[:：]\s*(.*)$/);
   let name = (colonSplit ? colonSplit[1] : headNoMeta)
@@ -412,6 +417,8 @@ export function parseTimetableHtml(html: string): ParsedSlot[] {
     .map((t) => parseTable(t))
     // 分页后的第二张表可能只剩 2 行（晚上 9-10 节），不能按「> 2 行」过滤掉
     .filter((grid) => grid.length >= 2)
+    // 课表最多「上午/下午 + 节次 + 7 天」= 9 列；页面下方 14 列的课程信息表不是课表
+    .filter((grid) => Math.max(...grid.map((row) => row.length)) <= 10)
     .sort((a, b) => scoreTable(b) - scoreTable(a));
 
   // 以前只取分数最高的那一张表；教务系统打印课表分页时，晚上那半截在另一张表里，
