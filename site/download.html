@@ -26,7 +26,7 @@
 
 <main class="wrap doc">
   <h1>下载 Android 版</h1>
-  <p class="updated">当前版本 <span data-app-version>v0.10.40</span> · arm64 · <span data-app-size>约 47 MB</span> · 适配 Android 8.0 及以上</p>
+  <p class="updated">当前版本 <span data-app-version>v0.10.41</span> · arm64 · <span data-app-size>约 47 MB</span> · 适配 Android 8.0 及以上</p>
 
   <div class="card dl-card">
     <img src="/assets/img/icon.png?v=20261118" alt="青禾小站图标">
@@ -54,15 +54,13 @@
     <li>到课表页点顶部提示条的「去导入」，选「打开教务网并导入」，登录后进到课表页点底部「导入这个页面」，示例课表就被替换成你自己的了。</li>
   </ol>
 
-  <h2 id="changelog">本次更新（v0.10.40）</h2>
-  <ul class="steps">
-    <li><strong>iOS 版可以装了</strong>：和安卓同一套 Expo + React Native 代码，通过 TestFlight 分发；界面、课表、专注记录完全一致，数据同样只存在手机上</li>
-    <li><strong>iOS 桌面小组件</strong>：WidgetKit 实现，2×2 看今天第一节课、4×2 看当天课表；点一下跳到课表页，改完课表自动刷新</li>
-    <li><strong>iOS 底部 TabBar 液态玻璃</strong>：iOS 26 及以上用系统玻璃材质，滑动时能透过底栏看到背景；低版本回退成半透明</li>
-    <li>修复<strong>浅色模式卡片上的灰色暗斑</strong>（渐变里的透明色被当成黑色插值，安卓那边也一并干净了）</li>
-    <li>关于页标明 <strong>iOS · Android · Web</strong>；iOS 上的「检查更新」改为直接打开 TestFlight 安装页，不再去下安卓安装包</li>
-    <li>站点加了一段「iOS 怎么装」的四步说明（先装 TestFlight → 收邀请 → 装 App → 后续在 TestFlight 里更新）</li>
-    <li><strong>iOS 小组件桌面不显示的修复（build 4）</strong>：build 3 里水印图超出 WidgetKit 归档上限，桌面上只剩系统占位骨架；已把水印压到 288px，并改成原生写 App Group（此前数据其实没写进共享容器）</li>
+  <h2 id="changelog">本次更新（v0.10.41）</h2>
+    <ul class="steps">
+    <li><strong>教务网导入修好了漏课</strong>：同一格里上下叠着的两门课（比如单周毛概 + 双周习概）、课表分页后第二张表里的晚课、单双周标记，现在都会完整导进来；底部那张「课程信息表」也不会再被误当成课程</li>
+    <li><strong>课表「今天」隔夜自动翻页</strong>：早上打开就是当天高亮，App 在后台挂一夜也不会停在昨天</li>
+    <li><strong>iOS 桌面小组件跨天换天</strong>：0 点后自动切到「新的一天」，并区分「今天没课」「还没同步过」「新的一天」三种空态</li>
+    <li><strong>iOS 出包加小组件图片体检</strong>：水印图超过 WidgetKit 归档上限就直接拦下，防止再出现桌面只剩系统骨架的事故</li>
+    <li>安卓 / iOS 同步到 <strong>0.10.41</strong>（安卓 versionCode 51、iOS TestFlight build 5）</li>
   </ul>
 
   <div class="note">
@@ -73,6 +71,7 @@
   <table>
     <thead><tr><th>版本</th><th>改动</th></tr></thead>
     <tbody>
+      <tr><td>v0.10.41</td><td>教务网导入漏课修复（同格两门课 / 分页续表 / 单双周标记，不再把课程信息表当课程）；课表「今天」隔夜自动刷新；iOS 小组件跨天换天与三种空态区分；iOS 出包加小组件图片尺寸体检；安卓 51 / iOS build 5。</td></tr>
       <tr><td>v0.10.40</td><td>iOS 版上 TestFlight（桌面小组件 + 底部液态玻璃 TabBar）；修复浅色模式卡片灰斑；关于页与更新入口支持 iOS；站点补充 TestFlight 安装说明；iOS 小组件桌面不显示的修复（build 4：图片归档上限 + App Group 原生写）；小组件跨天自动换天、数据版本与空态区分。</td></tr>
       <tr><td>v0.10.39</td><td>首页头部改为视差滚动 + 绿色渐隐到透明（去掉硬接缝）；修复深色模式按下服务卡时的白色圆斑；合并 v0.10.29–v0.10.38 的全部调整。</td></tr>
       <tr><td>v0.10.28</td><td>交互动效（tab 弹簧滑块、页面元素逐条淡入、翻周横移）；课表格子加高、字号放大；底部滑块居中修正。一次性合并 v0.10.24–v0.10.27 的所有改动。</td></tr>

@@ -113,6 +113,19 @@ function commitMessage(version) {
   return [`release: v${version}`, '', ...notes.map((n) => `- ${n}`)].join('\n');
 }
 
+/** Release 说明也取版本清单 notes，跟站点「更新记录」保持一致 */
+function releaseBody() {
+  let notes = [];
+  try {
+    const manifest = JSON.parse(readFileSync('site/app/version.json', 'utf8'));
+    if (Array.isArray(manifest.notes)) notes = manifest.notes.filter((n) => typeof n === 'string' && n.trim());
+  } catch {
+    /* 没有清单就只写版本号 */
+  }
+  const lines = notes.length ? notes.map((n) => `- ${n}`) : ['- 见站点更新记录'];
+  return [`## v${version}`, '', ...lines, '', '安装：下载下方 APK（arm64，Android 8.0+）；iOS 走 TestFlight。'].join('\n');
+}
+
 const version = JSON.parse(readFileSync('app.json', 'utf8')).expo.version;
 const commit = await api(`/repos/${REPO}/git/commits`, {
   method: 'POST',
@@ -145,7 +158,7 @@ if (TAG) {
     body: JSON.stringify({
       tag_name: TAG,
       name: `川农口袋 v${version}`,
-      body: `## v${version}\n\n- 课表：同一课程相邻节次合并成一块，非本周灰虚线占位\n- 小组件：4×2 与 2×2 两种，2×2 最多显示 3 门课\n- 校园卡：电费 · 一卡通合并入口，主页显示宿舍电费余额\n- 电费房间记忆，选错可「重新选宿舍」\n- 空闲教室接入教务处真实课表（211 间）\n- 成绩查询（导入式）、官方校历图\n- 路线图：桌面小组件已勾选\n\n安装：下载下方 APK（arm64，Android 7.0+）。`,
+      body: releaseBody(),
       draft: false,
       prerelease: false,
     }),

@@ -1,17 +1,17 @@
 {
-  "version": "0.10.40",
-  "versionCode": 50,
-  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.40.apk",
+  "version": "0.10.41",
+  "versionCode": 51,
+  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.41.apk",
   "fallbackUrl": "https://sicau-pocket.com/download.html",
-  "size": 50481130,
-  "sha256": "b0cc6dd0fd70cab311e4c8e83378ddb55a8cfe45a6556d58f8066fef5b0946d1",
-  "md5": "6fc9203c56ecfbbebdc11f81238e4bc4",
-  "releasedAt": "2026-11-25",
-  "minimumVersionCode": 49,
+  "size": 50492238,
+  "sha256": "2e844973cff8f0126084978a72b7d11eab06bc9b60907ac9d531a811bf538b35",
+  "md5": "3124c7d22e2a87c7513f049d03b8e9a0",
+  "releasedAt": "2026-11-26",
+  "minimumVersionCode": 50,
   "notes": [
-    "iOS 版上 TestFlight：桌面小组件 + 底部液态玻璃 TabBar",
-    "修复浅色模式卡片上的灰色暗斑",
-    "关于页标注 iOS · Android · Web，iOS 更新入口跳 TestFlight",
-    "站点补充 TestFlight 安装说明与排版修复"
+    "教务网导入漏课修复：同格两门课（单/双周）、分页续表、单双周标记都能导进来",
+    "课表「今天」隔夜自动刷新，不再停在昨天",
+    "iOS 桌面小组件跨天自动换天，并区分「今天没课 / 还没同步 / 新的一天」",
+    "iOS 出包加入小组件图片尺寸体检，防止桌面只剩系统骨架"
   ]
 }
