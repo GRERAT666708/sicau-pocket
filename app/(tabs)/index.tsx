@@ -108,7 +108,7 @@ export default function TodayScreen() {
               <Ionicons name="leaf" size={15} color="#fff" />
             </View>
             <Text style={{ color: 'rgba(255,255,255,0.92)', fontSize: 13, fontWeight: '600', letterSpacing: 0.5 }}>
-              口袋课表
+              泥龙课表
             </Text>
           </View>
           <View

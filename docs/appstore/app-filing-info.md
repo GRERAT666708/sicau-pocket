@@ -17,7 +17,7 @@
 
 | 项 | 填什么 |
 | --- | --- |
-| APP 名称 | 口袋课表 |
+| APP 名称 | 泥龙课表 |
 | 平台 | 仅 iOS（**不要**勾 Android） |
 | Bundle ID | `io.github.grerat666708.sicaupocket` |
 | APP 图标 | 1024×1024 PNG，无透明通道 |
@@ -30,6 +30,28 @@
 | 是否采集个人信息 | 否；课表与设置仅保存在本机 |
 | 上线时间 | 预计 2026 年 12 月 |
 
+## iOS 特征信息（阿里云备案要填，直接从签名证书取）
+
+| 字段 | 值 |
+| --- | --- |
+| Bundle ID | `io.github.grerat666708.sicaupocket` |
+| 证书主体 | `Apple Distribution: ChengYi Wang (HV6N28UTVZ)`，有效期至 2027-11-25 |
+| 证书 SHA-1 指纹 | `7A:77:02:98:8D:B0:2C:FB:98:8D:3C:1D:50:D5:CB:8E:2A:1E:AF:90` |
+| 证书公钥（Base64，DER/SPKI） | `MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvkGKOIMdlOJCSYRAFU/k+RppHy/l7NULxyCT2SjR1aBgFeVz/yH4rZR8p4n9UAzmCXEJN7WGvMA3D2qZcR+IzBWqJhJ6tKdm3GzCIC6SSlQstjVXX2x6egpd4Sc85KpUKw0ViDk1pMTKH2gL/IYZEQg+tiOZusNpjgkmWLgZjhx9EMPQypb4a27b7+R4daKxVsnj+h7QL1/cuwciRdtU1hgY6Ycaq5OHQVOg/ieS/wabDGJs1iwTsZghZphifci3csDngfkNQF/+S8fIDtIXHYRGwGLnoMUAMLSq3Q/fDM8DPAn9XKtEaMaQlrcmJrU/9BPnLUeW2+ffewz0YpG/TQIDAQAB` |
+
+取值命令（证书或设备丢了也能重取）：
+
+```bash
+openssl x509 -in .home/asc/dist.pem -noout -subject -enddate -fingerprint -sha1
+openssl x509 -in .home/asc/dist.pem -pubkey -noout | openssl pkey -pubin -outform DER | base64
+```
+
+> 提醒：证书续签/换证书后 SHA-1 与公钥都会变，必须做「变更备案」，否则备案信息与安装包签名对不上。
+
+## 图标（已备好）
+
+`docs/appstore/icon-1024.png`：1024×1024、RGB（已把原图 `assets/images/icon.png` 的 alpha 通道压平到白底，备案系统不接受带透明通道的图）。
+
 ## 材料清单（个人）
 
 1. 身份证正反面照片（清晰、四角完整）
@@ -39,23 +61,43 @@
 5. APP 图标 1024×1024
 6. APP 功能截图 2–3 张（课表页、导入页、桌面小组件）
 
-## 流程与时间
+## 流程与时间（2026 现行）
 
-1. 阿里云控制台 → 备案 → 我的备案 → 新增 APP 备案 → 提交
-2. 阿里云初审：1–2 个工作日（可能电话核验）
-3. 四川省通信管理局审核：1–20 个工作日（通常 3–7 天）
-4. 通过后短信通知，得到形如 `蜀ICP备2026071533号-2A` 的 APP 备案号
+1. **确认账号与主体**：必须用阿里云**中国站**账号（国际站提交会被拒），实名主体要和 `蜀ICP备2026071533号-1` 的备案主体一致（个人：ChengYi Wang）。
+2. **申请备案服务码**：阿里云控制台 → 备案 → 备案服务码（或 ECS 实例详情 → 备案服务码）。每个符合条件的内地 ECS 实例可生成 5 个，网站备案已用掉一个，App 用新的一个。ECS 必须：中国内地地域、包年包月（含自动续费剩余 3 个月以上）、有公网 IP（`8.156.40.157` 已满足）。
+3. **新增 APP 备案**：备案控制台 → 我的备案 → 新增（选「APP」）→ 填四块：
+   - 主体信息：自动带出已有备案主体，核对身份证/手机/邮箱
+   - APP 信息：名称「泥龙课表」、图标 `icon-1024.png`、**内容分类选「工具 / 效率」不要选「教育」**（教育类会要求教育部前置审批文件）、语言简体中文、是否提供 SDK 选否、第三方 SDK 无
+   - 运行平台：只勾 iOS → 填上表三项特征信息（Bundle ID / 证书公钥 / SHA-1）
+   - 接入信息：选 ECS 实例 `8.156.40.157` + 域名 `sicau-pocket.com`（App 启动时连的域名，App 本身无后端，填站点域名即可）
+   - 负责人：用阿里云 App 做个人人脸核验（必须本人）
+4. **提交订单**：订单有效期 45 天；同一账号同一时间只能有一个审核中的备案订单。
+5. **阿里云初审 1–2 个工作日**：可能电话核实（保持手机畅通），驳回就改完重提。
+6. **工信部短信核验（最容易翻车）**：提交后会有 `12381` 短信发到负责人手机，**24 小时内**登录 `https://beian.miit.gov.cn` 完成核验，超时订单自动作废要重来。
+7. **四川省通信管理局审核 1–20 个工作日**（一般 3–7 天），通过后短信通知，得到形如 `蜀ICP备2026071533号-2A` 的 APP 备案号（顺序号以短信/系统为准）。
+8. **公安联网备案（30 日内）**：`https://beian.mps.gov.cn` 全国互联网安全管理服务平台 → 新增 APP 备案，填 ICP 备案号、App 名称/包名、安全负责人；网站已有公安备案 `川公网安备51010702045039号`，App 要单独加一条。
+
+## 备好之后填 ASC + 提交审核
+
+- App Store Connect → App 信息 → 中国大陆 → 填 ICP 备案号（App 备案号，不是网站那个 `-1`）
+- App 内要能看到备案号：在「我的 → 关于」加一行（备案要求展示），我改代码 + 出 build
+- 版本 1.0 的元数据：描述/关键词/支持 URL/隐私 URL/4 张截图都在 `docs/appstore/` 里
+- 最后提交审核，审核备注用 `metadata-zh-Hans.md` 里那段
 
 ## 拿到备案号之后
 
 - App Store Connect → App 信息 → 中国大陆 → 填 ICP 备案号（没有单独字段时，填在版本页中国大陆区信息/审核备注里，并在提交时说明）
-- 首次提交中国区审核时苹果会核验备案号与 App 名称、主体是否对应，所以 **名称要先用「口袋课表」定下来再备案**，避免备案后改名又要变更备案
+- 首次提交中国区审核时苹果会核验备案号与 App 名称、主体是否对应，所以 **名称要先用「泥龙课表」定下来再备案**，避免备案后改名又要变更备案
 - 若以后安卓也上架，再补 Android 平台（需要包名、签名公钥、签名 MD5），并重新出正式签名的安装包
+
+## 时间预期
+
+平台初审 1–2 + 短信核验当天 + 管局 3–7（上限 20）≈ **顺利 5–10 个工作日**，被驳回要重排队，按 3 周缓冲比较稳。备案和出 build 6 可以并行，互不阻塞。
 
 ## 常见被退回原因
 
 - 主体与网站备案不一致
-- APP 名称与图标/功能描述对不上（比如描述写「川农」，名称写「口袋课表」）
+- APP 名称与图标/功能描述对不上（比如描述写「川农」，名称写「泥龙课表」）
 - 功能描述里出现「官方」「学校指定」等表述
 - 承诺书未手签或图片模糊
 - 服务器 IP 与域名解析不一致（备案时 IP 要与站点实际 IP 对得上）

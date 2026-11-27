@@ -443,7 +443,7 @@ struct SicauScheduleWidget: Widget {
     StaticConfiguration(kind: kind, provider: Provider()) { entry in
       SicauWidgetView(entry: entry)
     }
-    .configurationDisplayName("川农课表")
+    .configurationDisplayName("泥龙课表")
     .description("今天几节课、在哪上，放桌面不用点开 App。")
     .supportedFamilies([.systemSmall, .systemMedium])
     .contentMarginsDisabled()

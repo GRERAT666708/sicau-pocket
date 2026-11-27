@@ -1,17 +1,16 @@
 {
-  "version": "0.10.41",
-  "versionCode": 51,
-  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.41.apk",
+  "version": "0.10.42",
+  "versionCode": 52,
+  "apkUrl": "https://sicau-pocket.com/apk/sicau-pocket-0.10.42.apk",
   "fallbackUrl": "https://sicau-pocket.com/download.html",
-  "size": 50492238,
-  "sha256": "2e844973cff8f0126084978a72b7d11eab06bc9b60907ac9d531a811bf538b35",
-  "md5": "3124c7d22e2a87c7513f049d03b8e9a0",
-  "releasedAt": "2026-11-26",
-  "minimumVersionCode": 50,
+  "size": 50492230,
+  "sha256": "6cbaa5d060d1db98a0f96911bf3c7889c466b760957a83e52e36236b2574d86b",
+  "md5": "5f64e7e1668fd9825da95be77ab6f526",
+  "releasedAt": "2026-11-27",
+  "minimumVersionCode": 51,
   "notes": [
-    "教务网导入漏课修复：同格两门课（单/双周）、分页续表、单双周标记都能导进来",
-    "课表「今天」隔夜自动刷新，不再停在昨天",
-    "iOS 桌面小组件跨天自动换天，并区分「今天没课 / 还没同步 / 新的一天」",
-    "iOS 出包加入小组件图片尺寸体检，防止桌面只剩系统骨架"
+    "App 名字统一成「泥龙课表」：App 图标下、桌面小组件画廊、App 内标题、官网文案全部换成新名字，功能没有任何删减",
+    "图标与上架文案（描述、关键词、截图）已经按 App Store 要求备好，iOS 0.10.42 (build 6) 已上传 TestFlight",
+    "安卓 0.10.42（versionCode 52）与 iOS build 6 同步发布，两边版本号对齐"
   ]
 }

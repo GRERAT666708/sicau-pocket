@@ -212,7 +212,7 @@ export default function WidgetPreviewScreen() {
       <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}>
         <Text style={[styles.title, { color: t.text }]}>iOS 桌面小组件</Text>
         <Text style={[styles.note, { color: t.textSecondary }]}>
-          小组件同款版式预览（配色、字号、留白都跟真组件一致）。长按桌面左上角「+」，搜「口袋课表」即可添加。
+          小组件同款版式预览（配色、字号、留白都跟真组件一致）。长按桌面左上角「+」，搜「泥龙课表」即可添加。
         </Text>
 
         <Text style={[styles.label, { color: t.textTertiary }]}>小尺寸 · 两门课</Text>

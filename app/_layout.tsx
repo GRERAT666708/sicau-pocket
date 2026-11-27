@@ -18,6 +18,7 @@ import { useTheme } from '@/hooks/useTheme';
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
+
 export default function RootLayout() {
   const { hydrated } = useAppState();
   const t = useTheme();

@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "口袋课表",
+    "name": "泥龙课表",
     "slug": "sicau-pocket",
-    "version": "0.10.41",
+    "version": "0.10.42",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sicau-pocket",
@@ -12,10 +12,10 @@
       "supportsTablet": false,
       "bundleIdentifier": "io.github.grerat666708.sicaupocket",
       "infoPlist": {
-        "CFBundleDisplayName": "口袋课表",
+        "CFBundleDisplayName": "泥龙课表",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "5",
+      "buildNumber": "6",
       "appleTeamId": "HV6N28UTVZ",
       "entitlements": {
         "com.apple.security.application-groups": [
@@ -33,7 +33,7 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "versionCode": 51,
+      "versionCode": 52,
       "permissions": [
         "android.permission.REQUEST_INSTALL_PACKAGES"
       ]

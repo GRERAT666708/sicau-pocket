@@ -2,7 +2,7 @@
 module.exports = (config) => ({
   type: 'widget',
   name: 'SicauWidget',
-  displayName: '川农课表',
+  displayName: '泥龙课表',
   deploymentTarget: '17.0',
   bundleIdentifier: '.widget',
   colors: {

@@ -136,7 +136,7 @@ export function buildIcs(options: IcsOptions): string {
     'PRODID:-//sicau-pocket//timetable//CN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    `X-WR-CALNAME:${escapeText(termName ? `口袋课表 · ${termName}` : '口袋课表课表')}`,
+    `X-WR-CALNAME:${escapeText(termName ? `泥龙课表 · ${termName}` : '泥龙课表课表')}`,
     `X-WR-TIMEZONE:${TZID}`,
     'BEGIN:VTIMEZONE',
     `TZID:${TZID}`,

@@ -290,7 +290,7 @@ export default function SettingsScreen() {
                 const granted = await ensureReminderPermission();
                 setReminderBusy(false);
                 if (!granted) {
-                  setReminderNotice('系统没给通知权限，去「设置 → 应用 → 口袋课表 → 通知」里允许后再来打开。');
+                  setReminderNotice('系统没给通知权限，去「设置 → 应用 → 泥龙课表 → 通知」里允许后再来打开。');
                   return;
                 }
                 actions.updateSettings({ classReminder: true });
@@ -495,7 +495,7 @@ export default function SettingsScreen() {
         <View style={{ height: spacing.xl }} />
         <SectionTitle title="关于" />
         <Card style={{ paddingVertical: 2, paddingHorizontal: 16 }}>
-          <ListRow icon="information-circle-outline" title="关于口袋课表" onPress={() => router.push('/about')} />
+          <ListRow icon="information-circle-outline" title="关于泥龙课表" onPress={() => router.push('/about')} />
           <View style={{ height: 1, backgroundColor: t.border }} />
           <ListRow
             icon="shield-checkmark-outline"

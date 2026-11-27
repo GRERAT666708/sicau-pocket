@@ -77,7 +77,7 @@ export default function AboutScreen() {
           >
             <Ionicons name="leaf" size={36} color={t.onPrimary} />
           </View>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: t.text, marginTop: 14 }}>口袋课表</Text>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: t.text, marginTop: 14 }}>泥龙课表</Text>
           <Text style={{ fontSize: 12, color: t.textTertiary, marginTop: 4 }}>{`四川农业大学校园助手 · v${APP_VERSION}`}</Text>
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
             <Badge text="iOS · Android · Web" />

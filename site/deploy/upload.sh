@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 口袋课表官网 —— 一键把 site/ 同步到阿里云 ECS（可选顺带装 nginx 配置）
+# 泥龙课表官网 —— 一键把 site/ 同步到阿里云 ECS（可选顺带装 nginx 配置）
 #
 # 用法（在仓库 sicau-pocket/ 目录下执行）：
 #   HOST=root@1.2.3.4 bash site/deploy/upload.sh                          # 只同步文件

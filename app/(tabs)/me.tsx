@@ -284,12 +284,12 @@ export default function MeScreen() {
             onPress={() => router.push('/import')}
           />
           <View style={{ height: 1, backgroundColor: t.border }} />
-          <ListRow icon="information-circle-outline" title="关于口袋课表" onPress={() => router.push('/about')} />
+          <ListRow icon="information-circle-outline" title="关于泥龙课表" onPress={() => router.push('/about')} />
         </Card>
       </View>
 
       <Text style={{ textAlign: 'center', fontSize: 11, color: t.textTertiary, marginTop: spacing.xl }}>
-        {`口袋课表 v${APP_VERSION} · 四川农业大学校园助手`}
+        {`泥龙课表 v${APP_VERSION} · 四川农业大学校园助手`}
       </Text>
       </Reveal>
     </ScrollView>
